@@ -192,15 +192,15 @@ function AuctionPage() {
                 <div className="relative rounded-2xl overflow-hidden gold-ring aspect-square bg-card">
                   <PlayerPhoto player={a.currentPlayer} className="w-full h-full" />
                 </div>
-                <BadgePill className="absolute -top-3 left-4">
-                  <span className={`inline-block px-2 py-1 rounded text-sm font-bold ${
-                    a.currentPlayer.grade === 'A' ? 'bg-gradient-to-r from-yellow-400/90 to-amber-500/90 text-black shadow-lg shadow-yellow-500/30' :
-                    a.currentPlayer.grade === 'B' ? 'bg-gradient-to-r from-blue-400/90 to-blue-600/90 text-white shadow-lg shadow-blue-500/30' :
-                    'bg-gradient-to-r from-green-500/90 to-green-700/90 text-white shadow-lg shadow-green-500/30'
+                <div className="absolute -top-3 left-4">
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold font-stencil tracking-wider shadow-lg ${
+                    a.currentPlayer.grade === 'A' ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow-yellow-500/30' :
+                    a.currentPlayer.grade === 'B' ? 'bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-blue-500/30' :
+                    'bg-gradient-to-r from-green-500 to-green-700 text-white shadow-green-500/30'
                   }`}>
                     Grade {a.currentPlayer.grade || 'C'}
                   </span>
-                </BadgePill>
+                </div>
                 <BadgePill className="absolute -top-3 right-4">{a.currentPlayer.category}</BadgePill>
               </div>
               <div>
