@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run tsr:*)",
+      "Bash(git --version)",
+      "Bash(git init:*)",
+      "Bash(dir:*)",
+      "Bash(powershell:*)"
+    ]
+  }
+}
