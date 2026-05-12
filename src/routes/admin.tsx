@@ -565,21 +565,40 @@ function AdminComponent() {
                         )}
                       </div>
 
-                      {/* Delete Button - only for uploaded photos */}
+                      {/* Action Buttons for uploaded photos */}
                       {photoInfo.source === 'uploaded' && (
-                        <button
-                          onClick={() => {
-                            const existingPhotos = localStorage.getItem(PHOTOS_KEY);
-                            const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
-                            delete photosMap[selectedPlayer];
-                            localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
-                            setSuccessMessage("Photo removed successfully.");
-                            setRefreshKey(prev => prev + 1);
-                          }}
-                          className="mt-4 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
-                        >
-                          Remove Photo
-                        </button>
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => {
+                              const existingPhotos = localStorage.getItem(PHOTOS_KEY);
+                              const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
+                              const photoData = photosMap[selectedPlayer];
+                              if (photoData) {
+                                setOriginalImage(photoData);
+                                setCrop({ x: 0, y: 0 });
+                                setZoom(1);
+                                setShowCropper(true);
+                                clearMessages();
+                              }
+                            }}
+                            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                          >
+                            Edit Picture
+                          </button>
+                          <button
+                            onClick={() => {
+                              const existingPhotos = localStorage.getItem(PHOTOS_KEY);
+                              const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
+                              delete photosMap[selectedPlayer];
+                              localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
+                              setSuccessMessage("Photo removed successfully.");
+                              setRefreshKey(prev => prev + 1);
+                            }}
+                            className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       )}
                     </>
                   );
