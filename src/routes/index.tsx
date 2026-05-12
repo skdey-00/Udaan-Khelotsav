@@ -25,12 +25,25 @@ function AuctionPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [lastSoldCount, setLastSoldCount] = useState(0);
+  const [selectedGradeFilter, setSelectedGradeFilter] = useState<'A' | 'B' | 'C' | null>(null);
 
   useEffect(() => {
     setPulse(true);
     const t = setTimeout(() => setPulse(false), 400);
     return () => clearTimeout(t);
   }, [a.state.currentBid, a.state.currentSlug]);
+
+  // Sync selected grade filter with auction state
+  useEffect(() => {
+    setSelectedGradeFilter(a.state.selectedGrade);
+  }, [a.state.selectedGrade]);
+
+  // Handle grade filter button click
+  const handleGradeFilter = (grade: 'A' | 'B' | 'C' | null) => {
+    const newGrade = selectedGradeFilter === grade ? null : grade;
+    setSelectedGradeFilter(newGrade);
+    a.setSelectedGrade(newGrade);
+  };
 
   // Trigger confetti when a player is sold (not on undo)
   useEffect(() => {
@@ -75,14 +88,14 @@ function AuctionPage() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-primary/20 backdrop-blur-md bg-background/40 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <img
               src="/logo/Logo Khelotsav.png"
               alt="Udaan Khelotsav Logo"
-              className="h-12 md:h-16 w-auto object-contain"
+              className="h-12 md:h-16 w-auto object-contain flex-shrink-0"
             />
-            <div>
+            <div className="min-w-0">
               <p className="font-stencil text-xs md:text-sm text-primary/80">Presenting</p>
               <h1 className="font-display text-2xl md:text-4xl font-black text-gold leading-tight">
                 UDAAN KHELOTSAV
@@ -92,22 +105,82 @@ function AuctionPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-xs md:text-sm">
+          <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm flex-shrink-0">
             <Stat label="Sold" value={totalSold} />
             <Stat label="Unsold" value={totalUnsold} />
             <Stat label="Pool" value={remaining} />
             <button
               onClick={() => setShowLeaderboard(true)}
-              className="btn-ghost-sm text-primary/80 hover:text-gold"
+              className="btn-ghost-sm text-primary/80 hover:text-gold whitespace-nowrap"
             >
               🏆 Leaderboard
             </button>
-            <Link to="/admin" className="btn-ghost-sm text-muted-foreground hover:text-primary">
+            <Link to="/admin" className="btn-ghost-sm text-muted-foreground hover:text-primary whitespace-nowrap">
               Admin
             </Link>
           </div>
         </div>
       </header>
+
+      {/* Grade Filter Bar */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-4">
+        <div className="flex items-center justify-center gap-2 md:gap-3 flex-wrap">
+          <span className="text-xs md:text-sm text-muted-foreground font-stencil tracking-wider">FILTER BY GRADE:</span>
+          <button
+            onClick={() => handleGradeFilter(null)}
+            className={`px-3 md:px-4 py-2 rounded-lg font-bold text-xs md:text-sm transition-all ${
+              selectedGradeFilter === null
+                ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg'
+                : 'bg-card text-muted-foreground hover:bg-card/80 border border-border'
+            }`}
+          >
+            All Grades
+          </button>
+          {(['A', 'B', 'C'] as const).map((grade) => {
+            const isExhausted = a.isGradeExhausted(grade);
+            const isSelected = selectedGradeFilter === grade;
+            const count = a.getGradeCount(grade);
+            return (
+              <button
+                key={grade}
+                onClick={() => !isExhausted && handleGradeFilter(grade)}
+                disabled={isExhausted}
+                className={`px-3 md:px-4 py-2 rounded-lg font-bold text-xs md:text-sm transition-all relative ${
+                  isExhausted
+                    ? 'bg-muted/30 text-muted-foreground/50 cursor-not-allowed'
+                    : isSelected
+                    ? `shadow-lg ${
+                        grade === 'A'
+                          ? 'bg-gradient-to-r from-yellow-400/90 to-amber-500/90 text-black'
+                          : grade === 'B'
+                          ? 'bg-gradient-to-r from-blue-400/90 to-blue-600/90 text-white'
+                          : 'bg-gradient-to-r from-green-500/90 to-green-700/90 text-white'
+                      }`
+                    : `bg-card text-foreground hover:bg-card/80 border border-border ${
+                        grade === 'A'
+                          ? 'border-yellow-500/30 hover:border-yellow-500/50'
+                          : grade === 'B'
+                          ? 'border-blue-500/30 hover:border-blue-500/50'
+                          : 'border-green-500/30 hover:border-green-500/50'
+                      }`
+                }`}
+                title={isExhausted ? `No Grade ${grade} players remaining` : `${count} Grade ${grade} players available`}
+              >
+                Grade {grade}
+                <span className={`ml-1 text-xs ${isExhausted ? 'text-red-400' : 'text-muted-foreground'}`}>
+                  ({count})
+                </span>
+                {isExhausted && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 items-center justify-center text-[8px] text-white">!</span>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 grid lg:grid-cols-[1fr_360px] gap-6">
         {/* Stage */}
@@ -121,9 +194,9 @@ function AuctionPage() {
                 </div>
                 <BadgePill className="absolute -top-3 left-4">
                   <span className={`inline-block px-2 py-1 rounded text-sm font-bold ${
-                    a.currentPlayer.grade === 'A' ? 'bg-yellow-500 text-black' :
-                    a.currentPlayer.grade === 'B' ? 'bg-blue-500 text-white' :
-                    'bg-green-600 text-white'
+                    a.currentPlayer.grade === 'A' ? 'bg-gradient-to-r from-yellow-400/90 to-amber-500/90 text-black shadow-lg shadow-yellow-500/30' :
+                    a.currentPlayer.grade === 'B' ? 'bg-gradient-to-r from-blue-400/90 to-blue-600/90 text-white shadow-lg shadow-blue-500/30' :
+                    'bg-gradient-to-r from-green-500/90 to-green-700/90 text-white shadow-lg shadow-green-500/30'
                   }`}>
                     Grade {a.currentPlayer.grade || 'C'}
                   </span>
@@ -162,21 +235,25 @@ function AuctionPage() {
                     − ₹{fmt(a.currentGradeSettings.bidIncrement)}
                   </button>
                   <button onClick={() => {
+                    // Quick +5 bid - allows up to 5x base
                     const increment = a.currentGradeSettings.bidIncrement;
-                    const newBid = a.state.currentBid + (increment * 5);
-                    const maxBid = a.currentGradeSettings.basePrice * 5; // Cap at 5x base price
-                    if (newBid <= maxBid) {
-                      for(let i = 0; i < 5; i++) a.bidUp();
+                    const maxBid = a.currentGradeSettings.basePrice * 5;
+                    for (let i = 0; i < 5; i++) {
+                      if (a.state.currentBid + increment <= maxBid) {
+                        a.bidUp();
+                      }
                     }
                   }} className="btn-gold">
                     + ₹{fmt(a.currentGradeSettings.bidIncrement * 5)}
                   </button>
                   <button onClick={() => {
+                    // Quick +10 bid - allows up to 10x base
                     const increment = a.currentGradeSettings.bidIncrement;
-                    const newBid = a.state.currentBid + (increment * 10);
-                    const maxBid = a.currentGradeSettings.basePrice * 10; // Cap at 10x base price
-                    if (newBid <= maxBid) {
-                      for(let i = 0; i < 10; i++) a.bidUp();
+                    const maxBid = a.currentGradeSettings.basePrice * 10;
+                    for (let i = 0; i < 10; i++) {
+                      if (a.state.currentBid + increment <= maxBid) {
+                        a.bidUp();
+                      }
                     }
                   }} className="btn-gold">
                     + ₹{fmt(a.currentGradeSettings.bidIncrement * 10)}
@@ -226,7 +303,11 @@ function AuctionPage() {
               </button>
             </div>
             {a.currentPlayer && (
-              <button onClick={a.pickRandom} className="btn-ghost-sm">
+              <button onClick={() => {
+                // Mark current as unsold then pick next
+                a.markUnsold();
+                setTimeout(() => a.pickRandom(), 0);
+              }} className="btn-ghost-sm">
                 Skip → New Player
               </button>
             )}
@@ -457,16 +538,20 @@ function AuctionPage() {
       )}
 
       <style>{`
-        .btn-gold { background: var(--gradient-gold); color: var(--primary-foreground); padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 700; font-family: var(--font-stencil); letter-spacing: 0.1em; box-shadow: var(--shadow-gold); transition: transform .15s; }
-        .btn-gold:hover { transform: translateY(-2px); }
-        .btn-ghost { padding: 0.75rem 1.25rem; border-radius: 0.75rem; border: 1px solid oklch(0.82 0.16 85 / 0.4); color: var(--color-foreground); font-weight: 600; background: transparent; transition: background .15s; }
-        .btn-ghost:hover { background: oklch(0.82 0.16 85 / 0.1); }
-        .btn-ghost-sm { padding: 0.4rem 0.9rem; border-radius: 0.5rem; border: 1px solid oklch(0.82 0.16 85 / 0.3); font-size: 0.8rem; color: var(--color-foreground); background: transparent; }
-        .btn-ghost-sm:hover { background: oklch(0.82 0.16 85 / 0.1); }
-        .btn-success { padding: 0.75rem 1.75rem; border-radius: 0.75rem; background: linear-gradient(135deg, oklch(0.7 0.18 145), oklch(0.55 0.18 150)); color: white; font-weight: 800; font-family: var(--font-stencil); letter-spacing: 0.15em; box-shadow: 0 8px 24px -8px oklch(0.6 0.18 145 / 0.6); }
-        .btn-success:hover { transform: translateY(-2px); }
-        .btn-danger { padding: 0.75rem 1.75rem; border-radius: 0.75rem; background: linear-gradient(135deg, oklch(0.65 0.24 27), oklch(0.5 0.22 27)); color: white; font-weight: 800; font-family: var(--font-stencil); letter-spacing: 0.15em; }
-        .btn-danger:hover { transform: translateY(-2px); }
+        .btn-gold { background: var(--gradient-gold); color: var(--primary-foreground); padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 700; font-family: var(--font-stencil); letter-spacing: 0.1em; box-shadow: var(--shadow-gold); transition: transform .15s, box-shadow .15s; cursor: pointer; }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 12px 48px -10px oklch(0.82 0.16 85 / 0.6); }
+        .btn-gold:active { transform: translateY(0); }
+        .btn-ghost { padding: 0.75rem 1.25rem; border-radius: 0.75rem; border: 1px solid oklch(0.82 0.16 85 / 0.4); color: var(--color-foreground); font-weight: 600; background: transparent; transition: background .15s, border-color .15s; cursor: pointer; }
+        .btn-ghost:hover { background: oklch(0.82 0.16 85 / 0.1); border-color: oklch(0.82 0.16 85 / 0.6); }
+        .btn-ghost-sm { padding: 0.4rem 0.9rem; border-radius: 0.5rem; border: 1px solid oklch(0.82 0.16 85 / 0.3); font-size: 0.8rem; color: var(--color-foreground); background: transparent; transition: background .15s, border-color .15s; cursor: pointer; }
+        .btn-ghost-sm:hover { background: oklch(0.82 0.16 85 / 0.1); border-color: oklch(0.82 0.16 85 / 0.5); }
+        .btn-success { padding: 0.75rem 1.75rem; border-radius: 0.75rem; background: linear-gradient(135deg, oklch(0.7 0.18 145), oklch(0.55 0.18 150)); color: white; font-weight: 800; font-family: var(--font-stencil); letter-spacing: 0.15em; box-shadow: 0 8px 24px -8px oklch(0.6 0.18 145 / 0.6); transition: transform .15s, box-shadow .15s; cursor: pointer; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 10px 32px -8px oklch(0.6 0.18 145 / 0.7); }
+        .btn-success:active { transform: translateY(0); }
+        .btn-danger { padding: 0.75rem 1.75rem; border-radius: 0.75rem; background: linear-gradient(135deg, oklch(0.65 0.24 27), oklch(0.5 0.22 27)); color: white; font-weight: 800; font-family: var(--font-stencil); letter-spacing: 0.15em; box-shadow: 0 8px 24px -8px oklch(0.6 0.24 27 / 0.5); transition: transform .15s, box-shadow .15s; cursor: pointer; }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 10px 32px -8px oklch(0.6 0.24 27 / 0.6); }
+        .btn-danger:active { transform: translateY(0); }
+        .btn-gold:disabled, .btn-ghost:disabled, .btn-ghost-sm:disabled, .btn-success:disabled, .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
         @keyframes confetti-fall {
           0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
           100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
@@ -479,6 +564,12 @@ function AuctionPage() {
           z-index: 100;
           animation: confetti-fall 3s ease-out forwards;
         }
+        @keyframes ping {
+          75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        .animate-ping {
+          animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
       `}</style>
     </div>
   );
@@ -486,9 +577,9 @@ function AuctionPage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="panel rounded-lg px-3 py-1.5 text-center">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="font-display font-bold text-gold leading-none">{value}</p>
+    <div className="panel rounded-lg px-2 md:px-3 py-1.5 text-center min-w-[3.5rem] md:min-w-[4rem]">
+      <p className="text-[9px] md:text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="font-display font-bold text-gold leading-none text-sm md:text-base">{value}</p>
     </div>
   );
 }
@@ -531,10 +622,16 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
       onClick={onClose}
     >
       <div
-        className="panel rounded-2xl p-6 max-w-lg w-full gold-ring"
+        className="panel rounded-2xl p-6 max-w-lg w-full gold-ring relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {children}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+        >
+          ✕
+        </button>
+        <div className="pr-6">{children}</div>
         <button onClick={onClose} className="btn-ghost-sm mt-5 w-full">
           Close
         </button>

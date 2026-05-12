@@ -488,26 +488,26 @@ function AdminComponent() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <img
               src="/logo/Logo Khelotsav.png"
               alt="Udaan Khelotsav Logo"
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain flex-shrink-0"
             />
-            <h1 className="text-2xl font-display font-bold text-foreground">
+            <h1 className="text-xl md:text-2xl font-display font-bold text-foreground truncate">
               Admin Panel
             </h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <Link
               to="/"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
             >
               Back to Auction
             </Link>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+              className="px-3 md:px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors whitespace-nowrap"
             >
               Logout
             </button>
@@ -812,10 +812,10 @@ function AdminComponent() {
                   <div key={grade} className="bg-card rounded-lg p-4 border-2 border-purple-500/30">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-bold text-lg">
-                        <span className={`inline-block px-3 py-1 rounded ${
-                          grade === 'A' ? 'bg-yellow-500 text-black' :
-                          grade === 'B' ? 'bg-blue-500 text-white' :
-                          'bg-green-600 text-white'
+                        <span className={`inline-block px-3 py-1 rounded shadow-lg ${
+                          grade === 'A' ? 'bg-gradient-to-r from-yellow-400/90 to-amber-500/90 text-black shadow-yellow-500/30' :
+                          grade === 'B' ? 'bg-gradient-to-r from-blue-400/90 to-blue-600/90 text-white shadow-blue-500/30' :
+                          'bg-gradient-to-r from-green-500/90 to-green-700/90 text-white shadow-green-500/30'
                         }`}>
                           Grade {grade}
                         </span>

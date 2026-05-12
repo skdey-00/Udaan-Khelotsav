@@ -17,6 +17,7 @@ export interface AuctionState {
   currentSlug: string | null;
   currentBid: number;
   history: AuctionState[]; // snapshots BEFORE each action
+  selectedGrade: 'A' | 'B' | 'C' | null; // null = auto-select by grade order
 }
 
 export interface AuctionStats {
@@ -38,6 +39,7 @@ const initial = (): AuctionState => ({
   currentSlug: null,
   currentBid: BASE_PRICE,
   history: [],
+  selectedGrade: null,
 });
 
 const stripHistory = (s: AuctionState): AuctionState => ({ ...s, history: [] });
@@ -93,13 +95,20 @@ export function useAuction() {
     };
   }, [currentPlayer]);
 
-  // Pick next player by grade order (A first, then B, then C)
+  // Pick next player by grade order (A first, then B, then C) or by selected grade
   const pickNextByGrade = useCallback(() => {
     const available = PLAYERS.filter((p) => state.statuses[p.slug] === "available");
     if (available.length === 0) return null;
 
+    // Filter by selected grade if one is set
+    const gradeFiltered = state.selectedGrade
+      ? available.filter((p) => p.grade === state.selectedGrade)
+      : available;
+
+    if (gradeFiltered.length === 0) return null;
+
     // Sort by grade order, then by name
-    const sorted = [...available].sort((a, b) => {
+    const sorted = [...gradeFiltered].sort((a, b) => {
       const gradeOrderA = getGradeOrder(a.grade);
       const gradeOrderB = getGradeOrder(b.grade);
       if (gradeOrderA !== gradeOrderB) {
@@ -109,7 +118,7 @@ export function useAuction() {
     });
 
     return sorted[0];
-  }, [state.statuses]);
+  }, [state.statuses, state.selectedGrade]);
 
   const pickRandom = useCallback(() => {
     setState((s) => {
@@ -189,6 +198,21 @@ export function useAuction() {
     setState(initial());
   }, []);
 
+  // Set the grade filter for picking players
+  const setSelectedGrade = useCallback((grade: 'A' | 'B' | 'C' | null) => {
+    setState((s) => ({ ...snapshot(s), selectedGrade: grade }));
+  }, []);
+
+  // Check if a grade has any available players remaining
+  const isGradeExhausted = useCallback((grade: 'A' | 'B' | 'C') => {
+    return !PLAYERS.some((p) => p.grade === grade && state.statuses[p.slug] === "available");
+  }, [state.statuses]);
+
+  // Get count of available players by grade
+  const getGradeCount = useCallback((grade: 'A' | 'B' | 'C') => {
+    return PLAYERS.filter((p) => p.grade === grade && state.statuses[p.slug] === "available").length;
+  }, [state.statuses]);
+
   const teamRoster = useCallback(
     (teamId: string) =>
       state.sold
@@ -253,6 +277,9 @@ export function useAuction() {
     teamRoster,
     stats,
     currentGradeSettings,
+    setSelectedGrade,
+    isGradeExhausted,
+    getGradeCount,
     canUndo: state.history.length > 0,
   };
 }

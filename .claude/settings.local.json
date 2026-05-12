@@ -16,7 +16,10 @@
       "Bash(npm run build:*)",
       "Bash(grep:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(node:*)",
+      "Bash(git reset:*)"
     ]
   }
 }

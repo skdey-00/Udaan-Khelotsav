@@ -1,0 +1,78 @@
+Total players: 70
+Grade A: 7 players
+Grade B: 14 players
+Grade C: 49 players
+
+Grade A players: Chirag Bhupesh Momaya, Deep Dhakad, Raj sandip shah, Geet Bhupesh Momaya, Bhavya Tilesh Dharamsey, Anuj Dodhia, Nishit Sanghvi 
+
+All players with grades:
+C - JAINAM SANJEET SHAH
+B - Pritesh Chheda
+C - Dipesh
+C - Ritik ghanchi
+C - Maitri Vora
+C - Nevil Vipul Patel 
+C - Bhavesh Dhalaram 
+C - Smit vipul patel
+A - Chirag Bhupesh Momaya
+A - Deep Dhakad
+C - Neerali Lakhani
+B - Christopher Pinto
+B - Utsav Shah
+C - Vaibhav Shah
+A - Raj sandip shah
+B - KAMLESH CHOUDHARY
+B - Piyush Naresh Kothari 
+B - Vipul Dinesh Shah 
+C - Jay umesh thakkar
+C - Ritesh  Solanki 
+C - Tilesh Dharamsey
+A - Geet Bhupesh Momaya
+C - Veer Pritesh Chheda
+C - Ved Pritesh Chheda
+C - Charmy Pritesh Chheda
+C - hrutik 
+C - SHUBHAM RAJESH SANGANI
+C - Laksh Vishal Shah 
+A - Bhavya Tilesh Dharamsey
+C - Bhupesh Damji Momaya 
+A - Anuj Dodhia
+C - Palak Deep Doshi
+C - Deep Paresh doshi
+B - Naresh B Shah 
+C - Sheshnath M Chauhan 
+C - Jayendra Satavse 
+B - Krisha shah
+C - Arham shah
+C - Mehul Gosar 
+C - Krutika Dawda 
+C - Rohan Sanjay shah 
+C - Aarti Utsav Shah
+C - Prachi Jay Thakkar 
+C - Purvi Umesh Thakkar 
+C - Sanjeev Dudani
+B - Mokshil patel
+C - Parth Shah
+B - Dr Pratik Chheda
+C - Dr Radhika Chheda
+B - Mayur Sanghvi 
+B - Chirag m kankal
+C - Madhav ritesh ved
+C - Priscilla chirag kankal
+B - Kalpesh Satish patil 
+C - Kajal Gosher
+C - Jigar Gosher
+C - Manish joshi
+C - Manthan Dhakad 
+A - Nishit Sanghvi 
+C - Varun Sangani
+C - Jeet Trivedi 
+C - Sadhana satish patil
+C - Dharmil Meisheri
+C - Kush Hiren Nagda
+C - KARTIK BHAVESH DAWDA
+C - MITTAL DHARAMSEY
+C - Kaushik Choudhary
+C - Kriya shah
+C - Shashwat shah
+B - Dalesh Dhulla
