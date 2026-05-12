@@ -17,7 +17,7 @@ export const PLAYERS: Player[] = [
     "grade": "B"
   },
   {
-    "name": "Dipesh Momaya",
+    "name": "Dipesh",
     "gender": "Male",
     "category": "Bowler",
     "slug": "dipesh",
@@ -26,7 +26,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Ritik Ghanchi",
+    "name": "Ritik ghanchi",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "ritik-ghanchi",
@@ -53,7 +53,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Bhavesh Parihar",
+    "name": "Bhavesh Dhalaram",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "bhavesh-dhalaram",
@@ -62,7 +62,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Smit Lodaya",
+    "name": "Smit vipul patel",
     "gender": "Male",
     "category": "Bowler",
     "slug": "smit-vipul-patel",
@@ -71,7 +71,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Chirag Momaya",
+    "name": "Chirag Bhupesh Momaya",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "chirag-bhupesh-momaya",
@@ -125,7 +125,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Raj Sandip Shah",
+    "name": "Raj sandip shah",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "raj-sandip-shah",
@@ -134,7 +134,7 @@ export const PLAYERS: Player[] = [
     "grade": "A"
   },
   {
-    "name": "Kamlesh Choudhary",
+    "name": "KAMLESH CHOUDHARY",
     "gender": "Male",
     "category": "Batsman",
     "slug": "kamlesh-choudhary",
@@ -151,7 +151,7 @@ export const PLAYERS: Player[] = [
     "grade": "B"
   },
   {
-    "name": "Vipul Shah",
+    "name": "Vipul Dinesh Shah",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "vipul-dinesh-shah",
@@ -160,7 +160,7 @@ export const PLAYERS: Player[] = [
     "grade": "B"
   },
   {
-    "name": "Jay Thakkar",
+    "name": "Jay umesh thakkar",
     "gender": "Male",
     "category": "Batsman",
     "slug": "jay-umesh-thakkar",
@@ -186,7 +186,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Geet Momaya",
+    "name": "Geet Bhupesh Momaya",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "geet-bhupesh-momaya",
@@ -211,7 +211,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Charmy Chedda",
+    "name": "Charmy Pritesh Chheda",
     "gender": "Female",
     "category": "All-rounder",
     "slug": "charmy-pritesh-chheda",
@@ -220,7 +220,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Hrutik Shripad",
+    "name": "hrutik",
     "gender": "Male",
     "category": "Batsman",
     "slug": "hrutik",
@@ -229,7 +229,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Shubham Rajesh Sangani",
+    "name": "SHUBHAM RAJESH SANGANI",
     "gender": "Male",
     "category": "Bowler",
     "slug": "shubham-rajesh-sangani",
@@ -238,7 +238,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Laksh Shah",
+    "name": "Laksh Vishal Shah",
     "gender": "Male",
     "category": "Bowler",
     "slug": "laksh-vishal-shah",
@@ -256,7 +256,7 @@ export const PLAYERS: Player[] = [
     "grade": "A"
   },
   {
-    "name": "Bhupesh Momaya",
+    "name": "Bhupesh Damji Momaya",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "bhupesh-damji-momaya",
@@ -273,7 +273,7 @@ export const PLAYERS: Player[] = [
     "grade": "A"
   },
   {
-    "name": "Palak Doshi",
+    "name": "Palak Deep Doshi",
     "gender": "Female",
     "category": "Bowler",
     "slug": "palak-deep-doshi",
@@ -282,7 +282,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Deep Doshi",
+    "name": "Deep Paresh doshi",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "deep-paresh-doshi",
@@ -316,7 +316,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Krisha Shah",
+    "name": "Krisha shah",
     "gender": "Female",
     "category": "All-rounder",
     "slug": "krisha-shah",
@@ -325,7 +325,7 @@ export const PLAYERS: Player[] = [
     "grade": "B"
   },
   {
-    "name": "Arham Shah",
+    "name": "Arham shah",
     "gender": "Kids",
     "category": "All-rounder",
     "slug": "arham-shah",
@@ -342,7 +342,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Krutika Thakkar",
+    "name": "Krutika Dawda",
     "gender": "Female",
     "category": "All-rounder",
     "slug": "krutika-dawda",
@@ -351,7 +351,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Rohan Shah",
+    "name": "Rohan Sanjay shah",
     "gender": "Male",
     "category": "Batsman",
     "slug": "rohan-sanjay-shah",
@@ -385,7 +385,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Sanjay Shah",
+    "name": "Sanjeev Dudani",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "sanjeev-dudani",
@@ -394,7 +394,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Mokshil Patel",
+    "name": "Mokshil patel",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "mokshil-patel",
@@ -435,7 +435,7 @@ export const PLAYERS: Player[] = [
     "grade": "B"
   },
   {
-    "name": "Chirag Kankal",
+    "name": "Chirag m kankal",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "chirag-m-kankal",
@@ -444,7 +444,7 @@ export const PLAYERS: Player[] = [
     "grade": "B"
   },
   {
-    "name": "Madhav Ritesh Ved",
+    "name": "Madhav ritesh ved",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "madhav-ritesh-ved",
@@ -452,7 +452,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Priscilla Kankal",
+    "name": "Priscilla chirag kankal",
     "gender": "Female",
     "category": "Batsman",
     "slug": "priscilla-chirag-kankal",
@@ -460,7 +460,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Kalpesh Patil",
+    "name": "Kalpesh Satish patil",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "kalpesh-satish-patil",
@@ -486,7 +486,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Manish Joshi",
+    "name": "Manish joshi",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "manish-joshi",
@@ -531,7 +531,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Sadhana Patil",
+    "name": "Sadhana satish patil",
     "gender": "Female",
     "category": "Bowler",
     "slug": "sadhana-satish-patil",
@@ -548,7 +548,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Kush Nagda",
+    "name": "Kush Hiren Nagda",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "kush-hiren-nagda",
@@ -557,7 +557,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Kartik Dawda",
+    "name": "KARTIK BHAVESH DAWDA",
     "gender": "Male",
     "category": "All-rounder",
     "slug": "kartik-bhavesh-dawda",
@@ -566,7 +566,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Mittal Dharamsey",
+    "name": "MITTAL DHARAMSEY",
     "gender": "Female",
     "category": "All-rounder",
     "slug": "mittal-dharamsey",
@@ -583,7 +583,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Kriya Shah",
+    "name": "Kriya shah",
     "gender": "Kids",
     "category": "All-rounder",
     "slug": "kriya-shah",
@@ -592,7 +592,7 @@ export const PLAYERS: Player[] = [
     "grade": "C"
   },
   {
-    "name": "Shashwat Shah",
+    "name": "Shashwat shah",
     "gender": "Kids",
     "category": "All-rounder",
     "slug": "shashwat-shah",
@@ -607,58 +607,6 @@ export const PLAYERS: Player[] = [
     "age": 38,
     "photoFileName": "Dalesh Dhulla.jpg",
     "grade": "B"
-  },
-  {
-    "name": "Rahul Shah",
-    "gender": "Male",
-    "category": "All-rounder",
-    "slug": "rahul-shah",
-    "age": 32,
-    "photoFileName": "1fc9c7f8-3be3-416d-821a-ad62830f71e0 - Rahul Shah.jpeg",
-    "grade": "C"
-  },
-  {
-    "name": "Deep Doshi",
-    "gender": "Male",
-    "category": "All-rounder",
-    "slug": "deep-doshi-2",
-    "age": 36,
-    "grade": "C"
-  },
-  {
-    "name": "Saksham Physiotherapy",
-    "gender": "Male",
-    "category": "All-rounder",
-    "slug": "saksham-physio",
-    "age": 30,
-    "photoFileName": "a8ec2c99-336a-48d5-ac0f-2c79d2d181c1 - Saksham Physiotherapy.jpeg",
-    "grade": "C"
-  },
-  {
-    "name": "Umang Soni",
-    "gender": "Male",
-    "category": "All-rounder",
-    "slug": "umang-soni",
-    "age": 28,
-    "photoFileName": "image - Umang Soni.jpg",
-    "grade": "C"
-  },
-  {
-    "name": "BIZTAX ADVISORY",
-    "gender": "Male",
-    "category": "Bowler",
-    "slug": "biztax",
-    "age": 40,
-    "photoFileName": "IMG_4548 - BIZTAX ADVISORY.png",
-    "grade": "C"
-  },
-  {
-    "name": "Sanjay Shah",
-    "gender": "Male",
-    "category": "All-rounder",
-    "slug": "sanjay-shah-2",
-    "age": 50,
-    "grade": "C"
   }
 ];
 
