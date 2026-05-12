@@ -8,6 +8,7 @@ export const Route = createFileRoute("/admin")({
 
 const STORAGE_KEY = "udaan-khelotsav-admin-auth";
 const PHOTOS_KEY = "udaan-khelotsav-player-photos";
+const AUCTION_STORAGE_KEY = "udaan-khelotsav-auction-v1";
 const ADMIN_PASSWORD = "khelotsav2025"; // You can change this password
 
 // Helper to check if a player has any photo (localStorage or static)
@@ -247,6 +248,28 @@ function AdminComponent() {
     setZoom(1);
   };
 
+  const handleAuctionReset = () => {
+    const confirmed = confirm(
+      "⚠️ AUCTION RESET ⚠️\n\n" +
+      "This will reset the auction:\n" +
+      "• All sold/unsold player data will be cleared\n" +
+      "• All team purses will reset to ₹100,000\n" +
+      "• All bidding history will be cleared\n\n" +
+      "Uploaded player photos will be kept.\n\n" +
+      "Proceed with auction reset?"
+    );
+
+    if (confirmed) {
+      try {
+        localStorage.removeItem(AUCTION_STORAGE_KEY);
+        setSuccessMessage("✓ Auction reset successfully! Everything back to zero.");
+        setRefreshKey(prev => prev + 1);
+      } catch (err) {
+        setError("Failed to reset auction. Please try again.");
+      }
+    }
+  };
+
   const getStoredPhoto = (slug: string) => {
     // Include refreshKey to force re-fetch when photos change
     void refreshKey;
@@ -280,6 +303,11 @@ function AdminComponent() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-accent/20">
         <div className="w-full max-w-md p-8">
           <div className="text-center mb-8">
+            <img
+              src="/logo/Logo Khelotsav.png"
+              alt="Udaan Khelotsav Logo"
+              className="h-16 mx-auto mb-4 w-auto object-contain"
+            />
             <h1 className="text-4xl font-display font-bold text-foreground mb-2">
               Admin Login
             </h1>
@@ -329,10 +357,17 @@ function AdminComponent() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            Admin Panel
-          </h1>
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo/Logo Khelotsav.png"
+              alt="Udaan Khelotsav Logo"
+              className="h-10 w-auto object-contain"
+            />
+            <h1 className="text-2xl font-display font-bold text-foreground">
+              Admin Panel
+            </h1>
+          </div>
           <div className="flex items-center gap-4">
             <Link
               to="/"
@@ -548,6 +583,32 @@ function AdminComponent() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Reset Section */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-orange-600 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset Auction
+            </h2>
+            <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-medium text-foreground">Reset Auction Data</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Clear all sold/unsold players, reset team purses, and clear bidding history. Photos will be kept.
+                  </p>
+                </div>
+                <button
+                  onClick={handleAuctionReset}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  Reset Auction
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
