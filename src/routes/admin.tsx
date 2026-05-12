@@ -262,7 +262,7 @@ function AdminComponent() {
       "⚠️ AUCTION RESET ⚠️\n\n" +
       "This will reset the auction:\n" +
       "• All sold/unsold player data will be cleared\n" +
-      "• All team purses will reset to ₹100,000\n" +
+      "• All team purses will reset to ₹1,00,00,000 (1 Crore)\n" +
       "• All bidding history will be cleared\n\n" +
       "Uploaded player photos will be kept.\n\n" +
       "Proceed with auction reset?"

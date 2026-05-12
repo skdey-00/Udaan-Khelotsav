@@ -24,6 +24,6 @@ export const TEAM_SEEDS: TeamSeed[] = [
   { id: "sangam", name: "Sangam Fire Warriors", short: "SFW", logo: sangam, accent: "#ff5b1f" },
 ];
 
-export const STARTING_PURSE = 100000;
+export const STARTING_PURSE = 10000000;
 export const BASE_PRICE = 1000;
 export const BID_INCREMENT = 1000;
