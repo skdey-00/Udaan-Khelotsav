@@ -303,11 +303,7 @@ function AuctionPage() {
               </button>
             </div>
             {a.currentPlayer && (
-              <button onClick={() => {
-                // Mark current as unsold then pick next
-                a.markUnsold();
-                setTimeout(() => a.pickRandom(), 0);
-              }} className="btn-ghost-sm">
+              <button onClick={a.skipPlayer} className="btn-ghost-sm">
                 Skip → New Player
               </button>
             )}

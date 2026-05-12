@@ -193,6 +193,45 @@ export function useAuction() {
     });
   }, []);
 
+  const skipPlayer = useCallback(() => {
+    setState((s) => {
+      if (!s.currentSlug) return s;
+      const player = getPlayerWithEdits(s.currentSlug) || PLAYERS.find((p) => p.slug === s.currentSlug);
+      const basePrice = getBasePriceForGrade(player?.grade);
+      const ns = snapshot(s);
+
+      // Mark current as unsold and pick next in one update
+      const newStatuses = { ...ns.statuses, [s.currentSlug]: "unsold" };
+
+      // Get the next player (filter by newStatuses which includes the just-unsold player)
+      const available = PLAYERS.filter((p) => newStatuses[p.slug] === "available");
+      const gradeFiltered = s.selectedGrade
+        ? available.filter((p) => p.grade === s.selectedGrade)
+        : available;
+
+      let nextSlug = null;
+      let nextBid = basePrice;
+
+      if (gradeFiltered.length > 0) {
+        const sorted = [...gradeFiltered].sort((a, b) => {
+          const gradeOrderA = getGradeOrder(a.grade);
+          const gradeOrderB = getGradeOrder(b.grade);
+          if (gradeOrderA !== gradeOrderB) return gradeOrderA - gradeOrderB;
+          return a.name.localeCompare(b.name);
+        });
+        nextSlug = sorted[0].slug;
+        nextBid = getBasePriceForGrade(sorted[0].grade);
+      }
+
+      return {
+        ...ns,
+        statuses: newStatuses,
+        currentSlug: nextSlug,
+        currentBid: nextBid,
+      };
+    });
+  }, []);
+
   const reset = useCallback(() => {
     if (typeof window !== "undefined" && !confirm("Reset entire auction?")) return;
     setState(initial());
@@ -274,6 +313,7 @@ export function useAuction() {
     sellTo,
     undo,
     reset,
+    skipPlayer,
     teamRoster,
     stats,
     currentGradeSettings,
