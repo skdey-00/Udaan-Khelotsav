@@ -120,6 +120,9 @@ function AdminComponent() {
     return photosMap[slug] || null;
   };
 
+  // Count players with photos
+  const photosCount = PLAYERS.filter(p => !!getStoredPhoto(p.slug)).length;
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-accent/20">
@@ -199,34 +202,62 @@ function AdminComponent() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Player List */}
           <div>
-            <h2 className="text-xl font-semibold text-foreground mb-4">
-              Select a Player
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground">
+                Select a Player
+              </h2>
+              <span className="text-sm bg-primary/20 text-primary px-3 py-1 rounded-full">
+                {photosCount}/{PLAYERS.length} photos
+              </span>
+            </div>
             <div className="bg-card rounded-lg border border-border p-4 max-h-[600px] overflow-y-auto">
               <div className="space-y-2">
                 {PLAYERS.map((player) => {
                   const hasPhoto = !!getStoredPhoto(player.slug);
+                  const photoSrc = getStoredPhoto(player.slug);
                   return (
                     <button
                       key={`${player.slug}-${refreshKey}`}
                       onClick={() => setSelectedPlayer(player.slug)}
-                      className={`w-full p-3 rounded-lg text-left transition-colors ${
+                      className={`w-full p-3 rounded-lg text-left transition-all relative ${
                         selectedPlayer === player.slug
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
                           : "bg-muted hover:bg-muted/80"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{player.name}</p>
+                      <div className="flex items-center gap-3">
+                        {/* Thumbnail or placeholder */}
+                        <div className={`w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center ${
+                          hasPhoto ? 'bg-transparent' : 'bg-muted-foreground/20'
+                        }`}>
+                          {hasPhoto ? (
+                            <img
+                              src={photoSrc!}
+                              alt={player.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-lg font-bold text-muted-foreground">
+                              {player.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{player.name}</p>
                           <p className={`text-sm ${selectedPlayer === player.slug ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                             {player.category} • {player.gender}
                           </p>
                         </div>
+
+                        {/* Photo indicator with icon */}
                         {hasPhoto && (
-                          <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">
-                            Photo Added
-                          </span>
+                          <div className="flex items-center gap-1.5 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Photo</span>
+                          </div>
                         )}
                       </div>
                     </button>
