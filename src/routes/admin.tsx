@@ -565,39 +565,71 @@ function AdminComponent() {
                         )}
                       </div>
 
-                      {/* Action Buttons for uploaded photos */}
-                      {photoInfo.source === 'uploaded' && (
+                      {/* Action Buttons for any photo */}
+                      {photoInfo.hasPhoto && (
                         <div className="mt-4 flex gap-2">
                           <button
-                            onClick={() => {
-                              const existingPhotos = localStorage.getItem(PHOTOS_KEY);
-                              const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
-                              const photoData = photosMap[selectedPlayer];
-                              if (photoData) {
-                                setOriginalImage(photoData);
-                                setCrop({ x: 0, y: 0 });
-                                setZoom(1);
-                                setShowCropper(true);
-                                clearMessages();
+                            onClick={async () => {
+                              clearMessages();
+                              setUploading(true);
+
+                              try {
+                                let photoData: string | null = null;
+
+                                if (photoInfo.source === 'uploaded') {
+                                  // Already in localStorage
+                                  const existingPhotos = localStorage.getItem(PHOTOS_KEY);
+                                  const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
+                                  photoData = photosMap[selectedPlayer];
+                                } else {
+                                  // Static photo - need to fetch and convert to data URL
+                                  const response = await fetch(photoInfo.src!);
+                                  const blob = await response.blob();
+
+                                  // Convert to data URL
+                                  photoData = await new Promise<string>((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result as string);
+                                    reader.onerror = reject;
+                                    reader.readAsDataURL(blob);
+                                  });
+                                }
+
+                                if (photoData) {
+                                  setOriginalImage(photoData);
+                                  setCrop({ x: 0, y: 0 });
+                                  setZoom(1);
+                                  setShowCropper(true);
+                                }
+                              } catch (err) {
+                                console.error('Error loading photo for editing:', err);
+                                setError('Failed to load photo for editing.');
+                              } finally {
+                                setUploading(false);
                               }
                             }}
-                            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                            disabled={uploading}
+                            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
                           >
-                            Edit Picture
+                            {uploading ? 'Loading...' : 'Edit Picture'}
                           </button>
-                          <button
-                            onClick={() => {
-                              const existingPhotos = localStorage.getItem(PHOTOS_KEY);
-                              const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
-                              delete photosMap[selectedPlayer];
-                              localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
-                              setSuccessMessage("Photo removed successfully.");
-                              setRefreshKey(prev => prev + 1);
-                            }}
-                            className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
-                          >
-                            Remove
-                          </button>
+
+                          {/* Remove button only for uploaded photos */}
+                          {photoInfo.source === 'uploaded' && (
+                            <button
+                              onClick={() => {
+                                const existingPhotos = localStorage.getItem(PHOTOS_KEY);
+                                const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
+                                delete photosMap[selectedPlayer];
+                                localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
+                                setSuccessMessage("Photo removed successfully.");
+                                setRefreshKey(prev => prev + 1);
+                              }}
+                              className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
                       )}
                     </>
