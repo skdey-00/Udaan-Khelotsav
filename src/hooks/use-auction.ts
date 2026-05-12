@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PLAYERS, type Player } from "@/data/players";
+import { PLAYERS, getPlayerWithEdits, type Player } from "@/data/players";
 import { BASE_PRICE, BID_INCREMENT, STARTING_PURSE, TEAM_SEEDS } from "@/data/teams";
 
 export type PlayerStatus = "available" | "sold" | "unsold";
@@ -69,7 +69,7 @@ export function useAuction() {
   );
 
   const currentPlayer: Player | null = useMemo(
-    () => PLAYERS.find((p) => p.slug === state.currentSlug) ?? null,
+    () => getPlayerWithEdits(state.currentSlug ?? '') ?? PLAYERS.find((p) => p.slug === state.currentSlug) ?? null,
     [state.currentSlug]
   );
 
@@ -143,7 +143,7 @@ export function useAuction() {
         .filter((s) => s.teamId === teamId)
         .map((s) => ({
           ...s,
-          player: PLAYERS.find((p) => p.slug === s.playerSlug)!,
+          player: getPlayerWithEdits(s.playerSlug) || PLAYERS.find((p) => p.slug === s.playerSlug)!,
         })),
     [state.sold]
   );
@@ -157,7 +157,7 @@ export function useAuction() {
     let highestSale: { player: string; price: number } | null = null;
     state.sold.forEach((s) => {
       if (!highestSale || s.price > highestSale.price) {
-        const player = PLAYERS.find((p) => p.slug === s.playerSlug);
+        const player = getPlayerWithEdits(s.playerSlug) || PLAYERS.find((p) => p.slug === s.playerSlug);
         if (player) {
           highestSale = { player: player.name, price: s.price };
         }
@@ -168,7 +168,7 @@ export function useAuction() {
     const genderBreakdown: Record<string, number> = {};
 
     state.sold.forEach((s) => {
-      const player = PLAYERS.find((p) => p.slug === s.playerSlug);
+      const player = getPlayerWithEdits(s.playerSlug) || PLAYERS.find((p) => p.slug === s.playerSlug);
       if (player) {
         categoryBreakdown[player.category] = (categoryBreakdown[player.category] || 0) + 1;
         genderBreakdown[player.gender] = (genderBreakdown[player.gender] || 0) + 1;

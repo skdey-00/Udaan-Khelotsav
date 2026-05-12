@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuction } from "@/hooks/use-auction";
 import { TEAM_SEEDS, BID_INCREMENT, BASE_PRICE, STARTING_PURSE } from "@/data/teams";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
-import { PLAYERS } from "@/data/players";
+import { PLAYERS, getPlayerWithEdits } from "@/data/players";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -66,7 +66,7 @@ function AuctionPage() {
       .slice(0, 5)
       .map(s => ({
         ...s,
-        player: PLAYERS.find(p => p.slug === s.playerSlug)!,
+        player: getPlayerWithEdits(s.playerSlug) || PLAYERS.find(p => p.slug === s.playerSlug)!,
         team: TEAM_SEEDS.find(t => t.id === s.teamId)!
       }));
   }, [a.state.sold]);
@@ -259,7 +259,7 @@ function AuctionPage() {
           <h3 className="font-stencil text-sm text-primary/80 tracking-[0.3em] mb-3">RECENT GAVELS</h3>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {[...a.state.sold].reverse().slice(0, 8).map((s) => {
-              const player = PLAYERS.find((p) => p.slug === s.playerSlug)!;
+              const player = getPlayerWithEdits(s.playerSlug) || PLAYERS.find((p) => p.slug === s.playerSlug)!;
               const team = TEAM_SEEDS.find((t) => t.id === s.teamId)!;
               return (
                 <div key={s.playerSlug} className="panel rounded-xl p-3 flex gap-3 items-center">

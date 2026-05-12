@@ -585,3 +585,19 @@ export const PLAYERS: Player[] = [
     "age": 50
   }
 ];
+
+// Get player with edits applied from localStorage
+export function getPlayerWithEdits(slug: string): Player | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const editedPlayers = localStorage.getItem('udaan-khelotsav-players-edited');
+    if (editedPlayers) {
+      const edits = JSON.parse(editedPlayers);
+      const player = PLAYERS.find(p => p.slug === slug);
+      if (player && edits[slug]) {
+        return { ...player, ...edits[slug] };
+      }
+    }
+  } catch {}
+  return PLAYERS.find(p => p.slug === slug) || null;
+}

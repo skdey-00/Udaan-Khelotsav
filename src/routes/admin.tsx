@@ -9,7 +9,24 @@ export const Route = createFileRoute("/admin")({
 const STORAGE_KEY = "udaan-khelotsav-admin-auth";
 const PHOTOS_KEY = "udaan-khelotsav-player-photos";
 const AUCTION_STORAGE_KEY = "udaan-khelotsav-auction-v1";
+const PLAYERS_EDIT_KEY = "udaan-khelotsav-players-edited";
 const ADMIN_PASSWORD = "khelotsav2025"; // You can change this password
+
+// Get players with edits applied from localStorage
+export const getPlayersWithEdits = () => {
+  try {
+    const editedPlayers = localStorage.getItem(PLAYERS_EDIT_KEY);
+    if (editedPlayers) {
+      const edits = JSON.parse(editedPlayers);
+      // Merge with base PLAYERS
+      return PLAYERS.map(p => ({
+        ...p,
+        ...(edits[p.slug] || {})
+      }));
+    }
+  } catch {}
+  return PLAYERS;
+};
 
 // Helper to check if a player has any photo (localStorage or static)
 const playerHasPhoto = (player: { slug: string; photoFileName?: string }): { hasPhoto: boolean; source: 'localStorage' | 'static' | 'none'; src?: string } => {
@@ -52,6 +69,15 @@ function AdminComponent() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewRef = useRef<HTMLImageElement>(null);
+
+  // Player edit state
+  const [showEditPlayer, setShowEditPlayer] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    gender: '',
+    category: '',
+    age: ''
+  });
 
   const clearMessages = () => {
     setError("");
@@ -279,12 +305,103 @@ function AdminComponent() {
     }
   };
 
+  const openEditPlayerModal = () => {
+    if (!selectedPlayer) return;
+    const player = PLAYERS.find(p => p.slug === selectedPlayer);
+    if (player) {
+      setEditFormData({
+        name: player.name,
+        gender: player.gender,
+        category: player.category,
+        age: player.age?.toString() || ''
+      });
+      setShowEditPlayer(true);
+      clearMessages();
+    }
+  };
+
+  const handleSavePlayerEdit = () => {
+    if (!selectedPlayer) return;
+
+    // Validate
+    if (!editFormData.name.trim()) {
+      setError("Player name is required");
+      return;
+    }
+
+    try {
+      const existingEdits = localStorage.getItem(PLAYERS_EDIT_KEY);
+      const edits = existingEdits ? JSON.parse(existingEdits) : {};
+
+      // Save the edit (convert age back to number)
+      edits[selectedPlayer] = {
+        name: editFormData.name.trim(),
+        gender: editFormData.gender,
+        category: editFormData.category,
+        age: editFormData.age ? parseInt(editFormData.age) : undefined
+      };
+
+      localStorage.setItem(PLAYERS_EDIT_KEY, JSON.stringify(edits));
+      setSuccessMessage(`Player "${editFormData.name}" updated successfully!`);
+      setShowEditPlayer(false);
+      setRefreshKey(prev => prev + 1);
+    } catch (err) {
+      setError("Failed to save player details.");
+    }
+  };
+
+  const handleResetPlayer = () => {
+    if (!selectedPlayer) return;
+
+    const confirmed = confirm("Reset this player to original details? This will undo any custom changes.");
+
+    if (confirmed) {
+      try {
+        const existingEdits = localStorage.getItem(PLAYERS_EDIT_KEY);
+        const edits = existingEdits ? JSON.parse(existingEdits) : {};
+        delete edits[selectedPlayer];
+        localStorage.setItem(PLAYERS_EDIT_KEY, JSON.stringify(edits));
+        setSuccessMessage("Player reset to original details.");
+        setRefreshKey(prev => prev + 1);
+      } catch (err) {
+        setError("Failed to reset player.");
+      }
+    }
+  };
+
   const getStoredPhoto = (slug: string) => {
     // Include refreshKey to force re-fetch when photos change
     void refreshKey;
     const existingPhotos = localStorage.getItem(PHOTOS_KEY);
     const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
     return photosMap[slug] || null;
+  };
+
+  // Get player with edits applied
+  const getPlayerWithEdits = (slug: string) => {
+    try {
+      const existingEdits = localStorage.getItem(PLAYERS_EDIT_KEY);
+      if (existingEdits) {
+        const edits = JSON.parse(existingEdits);
+        const player = PLAYERS.find(p => p.slug === slug);
+        if (player && edits[slug]) {
+          return { ...player, ...edits[slug] };
+        }
+      }
+    } catch {}
+    return PLAYERS.find(p => p.slug === slug);
+  };
+
+  // Check if player has been edited
+  const isPlayerEdited = (slug: string) => {
+    try {
+      const existingEdits = localStorage.getItem(PLAYERS_EDIT_KEY);
+      if (existingEdits) {
+        const edits = JSON.parse(existingEdits);
+        return !!edits[slug];
+      }
+    } catch {}
+    return false;
   };
 
   // Get photo info (localStorage or static)
@@ -408,8 +525,10 @@ function AdminComponent() {
             </div>
             <div className="bg-card rounded-lg border border-border p-4 max-h-[600px] overflow-y-auto">
               <div className="space-y-2">
-                {PLAYERS.map((player) => {
+                {PLAYERS.map((basePlayer) => {
+                  const player = getPlayerWithEdits(basePlayer.slug) || basePlayer;
                   const photoInfo = getPhotoInfo(player);
+                  const hasEdit = isPlayerEdited(player.slug);
                   return (
                     <button
                       key={`${player.slug}-${refreshKey}`}
@@ -433,15 +552,23 @@ function AdminComponent() {
                             />
                           ) : (
                             <span className="text-lg font-bold text-muted-foreground">
-                              {player.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                              {player.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
                             </span>
                           )}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{player.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{player.name}</p>
+                            {hasEdit && (
+                              <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
+                                Edited
+                              </span>
+                            )}
+                          </div>
                           <p className={`text-sm ${selectedPlayer === player.slug ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                             {player.category} • {player.gender}
+                            {player.age && ` • Age ${player.age}`}
                           </p>
                         </div>
 
@@ -485,17 +612,36 @@ function AdminComponent() {
             {selectedPlayer ? (
               <div key={`upload-${refreshKey}`} className="bg-card rounded-lg border border-border p-6">
                 {(() => {
-                  const player = PLAYERS.find((p) => p.slug === selectedPlayer);
+                  const player = getPlayerWithEdits(selectedPlayer) || PLAYERS.find((p) => p.slug === selectedPlayer);
                   const photoInfo = getPhotoInfo(player!);
+                  const hasEdit = isPlayerEdited(selectedPlayer);
+                  if (!player) return null;
+
                   return (
                     <>
                       <div className="mb-6">
-                        <h3 className="text-lg font-medium text-foreground mb-2">
-                          {player?.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {player?.category} • {player?.gender}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-medium text-foreground mb-1">
+                              {player.name}
+                              {hasEdit && (
+                                <span className="ml-2 text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {player.category} • {player.gender}
+                              {player.age && ` • Age ${player.age}`}
+                            </p>
+                          </div>
+                          <button
+                            onClick={openEditPlayerModal}
+                            className="px-3 py-1.5 text-xs bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+                          >
+                            ✏️ Edit Details
+                          </button>
+                        </div>
                       </div>
 
                       {/* Photo Preview */}
@@ -816,6 +962,114 @@ function AdminComponent() {
 
             {/* Hidden canvas for processing */}
             <canvas ref={canvasRef} width={400} height={400} className="hidden" />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Player Modal */}
+      {showEditPlayer && selectedPlayer && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-foreground mb-4">Edit Player Details</h3>
+
+            <div className="space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Player Name
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground"
+                  placeholder="Enter player name"
+                />
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Gender
+                </label>
+                <select
+                  value={editFormData.gender}
+                  onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground"
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Kids">Kids</option>
+                </select>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Category
+                </label>
+                <select
+                  value={editFormData.category}
+                  onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground"
+                >
+                  <option value="">Select category</option>
+                  <option value="Batsman">Batsman</option>
+                  <option value="Bowler">Bowler</option>
+                  <option value="All-rounder">All-rounder</option>
+                  <option value="Wicket Keeper">Wicket Keeper</option>
+                </select>
+              </div>
+
+              {/* Age */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Age (optional)
+                </label>
+                <input
+                  type="number"
+                  value={editFormData.age}
+                  onChange={(e) => setEditFormData({ ...editFormData, age: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground"
+                  placeholder="Enter age"
+                  min="1"
+                  max="100"
+                />
+              </div>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <p className="text-sm text-red-500 mt-4">{error}</p>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditPlayer(false);
+                  clearMessages();
+                }}
+                className="flex-1 px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+              >
+                Cancel
+              </button>
+              {isPlayerEdited(selectedPlayer) && (
+                <button
+                  onClick={handleResetPlayer}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Reset
+                </button>
+              )}
+              <button
+                onClick={handleSavePlayerEdit}
+                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}
