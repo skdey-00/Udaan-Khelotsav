@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { PLAYERS } from "@/data/players";
 
@@ -41,6 +41,14 @@ function AdminComponent() {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Image cropping state
+  const [showCropper, setShowCropper] = useState(false);
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const clearMessages = () => {
     setError("");
@@ -85,51 +93,107 @@ function AdminComponent() {
     clearMessages();
 
     try {
-      // Convert image to base64
+      // Load image for cropping
       const reader = new FileReader();
       reader.onloadend = () => {
-        try {
-          const base64 = reader.result as string;
-
-          // Check localStorage quota before saving
-          const existingPhotos = localStorage.getItem(PHOTOS_KEY);
-          const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
-
-          // Store the photo for this player
-          photosMap[selectedPlayer] = base64;
-
-          // Try to save and check for quota exceeded error
-          try {
-            localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
-            setUploading(false);
-            setSuccessMessage(`Photo uploaded successfully for ${PLAYERS.find(p => p.slug === selectedPlayer)?.name}!`);
-            e.target.value = ""; // Reset file input
-          } catch (quotaErr) {
-            if (quotaErr instanceof DOMException && quotaErr.name === "QuotaExceededError") {
-              setError("Storage full. Please remove some photos first.");
-            } else {
-              throw quotaErr;
-            }
-            setUploading(false);
-          }
-        } catch (parseErr) {
-          console.error("Error processing photo:", parseErr);
-          setError("Failed to process photo. Please try a different file.");
+        const img = new Image();
+        img.onload = () => {
+          setOriginalImage(reader.result as string);
+          setImageDimensions({ width: img.width, height: img.height });
+          // Center the crop area initially
+          setCrop({ x: 0, y: 0 });
+          setZoom(1);
+          setShowCropper(true);
           setUploading(false);
-        }
+        };
+        img.src = reader.result as string;
       };
-
-      reader.onerror = () => {
-        setError("Failed to read file. Please try again.");
-        setUploading(false);
-      };
-
       reader.readAsDataURL(file);
     } catch (err) {
-      console.error("Error uploading photo:", err);
-      setError("Failed to upload photo");
+      console.error("Error loading image:", err);
+      setError("Failed to load image");
       setUploading(false);
     }
+  };
+
+  const handleCropComplete = () => {
+    if (!originalImage || !selectedPlayer) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Calculate crop area
+    const cropSize = 300; // Output size
+    canvas.width = cropSize;
+    canvas.height = cropSize;
+
+    // Get the visible area based on zoom and position
+    const sourceX = (cropSize / 2 - crop.x) / zoom;
+    const sourceY = (cropSize / 2 - crop.y) / zoom;
+    const sourceSize = cropSize / zoom;
+
+    // Draw cropped image
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, cropSize, cropSize);
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cropSize / 2, cropSize / 2, cropSize / 2, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(
+        img,
+        sourceX,
+        sourceY,
+        sourceSize,
+        sourceSize,
+        0,
+        0,
+        cropSize,
+        cropSize
+      );
+      ctx.restore();
+
+      // Convert to base64 and save
+      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+      // Save to localStorage
+      try {
+        const existingPhotos = localStorage.getItem(PHOTOS_KEY);
+        const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
+        photosMap[selectedPlayer] = croppedDataUrl;
+
+        // Check size before saving
+        if (croppedDataUrl.length > 700000) { // ~500KB base64
+          setError("Cropped image is still too large. Try zooming in more.");
+          return;
+        }
+
+        localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
+        setSuccessMessage(`Photo uploaded and cropped successfully for ${PLAYERS.find(p => p.slug === selectedPlayer)?.name}!`);
+        setShowCropper(false);
+        setOriginalImage(null);
+        setRefreshKey(prev => prev + 1);
+      } catch (quotaErr) {
+        if (quotaErr instanceof DOMException && quotaErr.name === "QuotaExceededError") {
+          setError("Storage full. Please remove some photos first.");
+        } else {
+          throw quotaErr;
+        }
+      }
+    };
+    img.src = originalImage;
+  };
+
+  const cancelCrop = () => {
+    setShowCropper(false);
+    setOriginalImage(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
   };
 
   const getStoredPhoto = (slug: string) => {
@@ -445,6 +509,103 @@ function AdminComponent() {
           </div>
         </div>
       </main>
+
+      {/* Image Cropper Modal */}
+      {showCropper && originalImage && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl p-6 max-w-lg w-full">
+            <h3 className="text-lg font-bold text-foreground mb-4">Crop Photo</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Adjust the image to center the face. Drag to pan, use slider to zoom.
+            </p>
+
+            {/* Cropper Preview */}
+            <div className="relative mb-4 mx-auto" style={{ width: '300px', height: '300px' }}>
+              <div
+                className="w-full h-full rounded-full overflow-hidden border-4 border-primary relative cursor-move"
+                style={{ backgroundColor: '#000' }}
+                onMouseDown={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const startX = e.clientX - crop.x;
+                  const startY = e.clientY - crop.y;
+
+                  const handleMouseMove = (moveEvent: MouseEvent) => {
+                    let newX = moveEvent.clientX - startX;
+                    let newY = moveEvent.clientY - startY;
+
+                    // Limit pan range based on zoom
+                    const maxPan = 150 * (zoom - 1);
+                    newX = Math.max(-maxPan, Math.min(maxPan, newX));
+                    newY = Math.max(-maxPan, Math.min(maxPan, newY));
+
+                    setCrop({ x: newX, y: newY });
+                  };
+
+                  const handleMouseUp = () => {
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                  };
+
+                  document.addEventListener('mousemove', handleMouseMove);
+                  document.addEventListener('mouseup', handleMouseUp);
+                }}
+              >
+                <img
+                  src={originalImage}
+                  alt="Crop preview"
+                  className="w-full h-full object-cover"
+                  style={{
+                    transform: `translate(${crop.x}px, ${crop.y}px) scale(${zoom})`,
+                    transformOrigin: 'center center',
+                    transition: 'transform 0.1s ease-out',
+                  }}
+                  draggable={false}
+                />
+              </div>
+
+              {/* Focus indicator */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-48 h-48 border-2 border-white/50 rounded-full" />
+              </div>
+            </div>
+
+            {/* Zoom Slider */}
+            <div className="mb-6">
+              <label className="text-sm font-medium text-foreground mb-2 block">
+                Zoom: {zoom.toFixed(1)}x
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value={zoom}
+                onChange={(e) => setZoom(parseFloat(e.target.value))}
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={cancelCrop}
+                className="flex-1 px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropComplete}
+                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Apply Crop
+              </button>
+            </div>
+
+            {/* Hidden canvas for cropping */}
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
