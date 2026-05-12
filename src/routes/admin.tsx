@@ -47,13 +47,65 @@ function AdminComponent() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const clearMessages = () => {
     setError("");
     setSuccessMessage("");
   };
+
+  // Drag handlers for cropper
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      setCrop({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
+
+  // Touch handlers for mobile
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const newX = touch.clientX - dragStart.x;
+      const newY = touch.clientY - dragStart.y;
+      setCrop({ x: newX, y: newY });
+    };
+
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDragging, dragStart]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +151,6 @@ function AdminComponent() {
         const img = new Image();
         img.onload = () => {
           setOriginalImage(reader.result as string);
-          setImageDimensions({ width: img.width, height: img.height });
           // Center the crop area initially
           setCrop({ x: 0, y: 0 });
           setZoom(1);
@@ -385,7 +436,7 @@ function AdminComponent() {
           {/* Upload Section */}
           <div>
             <h2 className="text-xl font-semibold text-foreground mb-4">
-              {selectedPlayer && getPhotoInfo(PLAYERS.find(p => p.slug === selectedPlayer)!).source === 'static' ? 'Photo Info' : 'Upload Photo'}
+              Upload Photo
             </h2>
             {selectedPlayer ? (
               <div key={`upload-${refreshKey}`} className="bg-card rounded-lg border border-border p-6">
@@ -422,7 +473,7 @@ function AdminComponent() {
                                   ? 'bg-green-500 text-white'
                                   : 'bg-blue-500/80 text-white'
                               }`}>
-                                {photoInfo.source === 'uploaded' ? 'Uploaded' : 'Static File'}
+                                {photoInfo.source === 'uploaded' ? 'Uploaded' : 'Static'}
                               </div>
                             </>
                           ) : (
@@ -434,15 +485,6 @@ function AdminComponent() {
                           )}
                         </div>
                       </div>
-
-                      {/* Info text for static photos */}
-                      {photoInfo.source === 'static' && (
-                        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                          <p className="text-sm text-blue-400 dark:text-blue-300">
-                            ℹ️ This player has a static photo file. Uploaded photos will override static files.
-                          </p>
-                        </div>
-                      )}
 
                       {/* Upload Button */}
                       <div>
@@ -462,13 +504,13 @@ function AdminComponent() {
                               cursor-pointer disabled:opacity-50"
                           />
                           <p className="text-xs text-muted-foreground mt-2">
-                            Max file size: 500KB. Recommended: Square or portrait image.
+                            Max file size: 500KB. Your photo will be cropped to a square.
                           </p>
                         </label>
                         {uploading && (
                           <p className="text-sm text-primary mt-2 flex items-center gap-2">
                             <span className="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                            Uploading...
+                            Loading...
                           </p>
                         )}
                         {error && (
@@ -492,7 +534,7 @@ function AdminComponent() {
                           }}
                           className="mt-4 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
                         >
-                          Remove Uploaded Photo
+                          Remove Photo
                         </button>
                       )}
                     </>
@@ -512,97 +554,156 @@ function AdminComponent() {
 
       {/* Image Cropper Modal */}
       {showCropper && originalImage && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card rounded-2xl p-6 max-w-lg w-full">
-            <h3 className="text-lg font-bold text-foreground mb-4">Crop Photo</h3>
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden">
+          <div className="bg-card rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-foreground mb-2">Crop Photo</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Adjust the image to center the face. Drag to pan, use slider to zoom.
+              Drag the image to position the face • Use zoom to adjust size
             </p>
 
-            {/* Cropper Preview */}
-            <div className="relative mb-4 mx-auto" style={{ width: '300px', height: '300px' }}>
+            {/* Cropper Container */}
+            <div className="flex flex-col items-center mb-6">
               <div
-                className="w-full h-full rounded-full overflow-hidden border-4 border-primary relative cursor-move"
-                style={{ backgroundColor: '#000' }}
-                onMouseDown={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const startX = e.clientX - crop.x;
-                  const startY = e.clientY - crop.y;
-
-                  const handleMouseMove = (moveEvent: MouseEvent) => {
-                    let newX = moveEvent.clientX - startX;
-                    let newY = moveEvent.clientY - startY;
-
-                    // Limit pan range based on zoom
-                    const maxPan = 150 * (zoom - 1);
-                    newX = Math.max(-maxPan, Math.min(maxPan, newX));
-                    newY = Math.max(-maxPan, Math.min(maxPan, newY));
-
-                    setCrop({ x: newX, y: newY });
-                  };
-
-                  const handleMouseUp = () => {
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                  };
-
-                  document.addEventListener('mousemove', handleMouseMove);
-                  document.addEventListener('mouseup', handleMouseUp);
-                }}
+                className="relative overflow-hidden rounded-xl border-4 border-primary/50 shadow-2xl"
+                style={{ width: '280px', height: '280px', backgroundColor: '#000' }}
               >
-                <img
-                  src={originalImage}
-                  alt="Crop preview"
-                  className="w-full h-full object-cover"
+                {/* The movable image */}
+                <div
+                  className="absolute top-0 left-0 cursor-grab active:cursor-grabbing w-full h-full"
                   style={{
                     transform: `translate(${crop.x}px, ${crop.y}px) scale(${zoom})`,
                     transformOrigin: 'center center',
-                    transition: 'transform 0.1s ease-out',
+                    transition: isDragging ? 'none' : 'transform 0.05s ease-out',
                   }}
-                  draggable={false}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setIsDragging(true);
+                    setDragStart({ x: e.clientX - crop.x, y: e.clientY - crop.y });
+                  }}
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    setIsDragging(true);
+                    setDragStart({ x: touch.clientX - crop.x, y: touch.clientY - crop.y });
+                  }}
+                >
+                  <img
+                    src={originalImage}
+                    alt="Crop preview"
+                    className="w-full h-full object-cover pointer-events-none"
+                    draggable={false}
+                    style={{
+                      maxWidth: 'none',
+                      maxHeight: 'none',
+                      width: '280px',
+                      height: '280px',
+                    }}
+                  />
+                </div>
+
+                {/* Overlay with circular cutout */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(circle at center, transparent 120px, rgba(0,0,0,0.8) 121px)',
+                  }}
                 />
+
+                {/* Focus circle indicator */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div
+                    className="border-2 border-dashed border-yellow-400 rounded-full"
+                    style={{ width: '240px', height: '240px' }}
+                  />
+                </div>
+
+                {/* Crosshair guides */}
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-1/2 left-0 right-0 h-px bg-yellow-400/50" />
+                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-yellow-400/50" />
+                </div>
               </div>
 
-              {/* Focus indicator */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-48 h-48 border-2 border-white/50 rounded-full" />
+              {/* Instructions */}
+              <div className="mt-4 text-center text-sm text-muted-foreground">
+                Position the face inside the yellow circle
               </div>
             </div>
 
             {/* Zoom Slider */}
             <div className="mb-6">
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Zoom: {zoom.toFixed(1)}x
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-foreground">
+                  Zoom
+                </label>
+                <span className="text-sm text-primary font-mono bg-primary/10 px-2 py-0.5 rounded">
+                  {zoom.toFixed(1)}x
+                </span>
+              </div>
               <input
                 type="range"
-                min="1"
+                min="0.5"
                 max="3"
                 step="0.1"
                 value={zoom}
-                onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                onChange={(e) => {
+                  setZoom(parseFloat(e.target.value));
+                  setCrop({ x: 0, y: 0 });
+                }}
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                style={{ accentColor: 'hsl(45, 100%, 50%)' }}
               />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>0.5x</span>
+                <span>1.75x</span>
+                <span>3x</span>
+              </div>
+            </div>
+
+            {/* Quick position buttons */}
+            <div className="mb-6 grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setCrop({ x: 0, y: 0 })}
+                className="px-3 py-2 bg-muted text-sm rounded-lg hover:bg-muted/80 transition-colors"
+              >
+                Center
+              </button>
+              <button
+                onClick={() => setZoom(1)}
+                className="px-3 py-2 bg-muted text-sm rounded-lg hover:bg-muted/80 transition-colors"
+              >
+                Reset Zoom
+              </button>
+              <button
+                onClick={() => {
+                  setCrop({ x: 0, y: 0 });
+                  setZoom(1);
+                }}
+                className="px-3 py-2 bg-muted text-sm rounded-lg hover:bg-muted/80 transition-colors"
+              >
+                Reset All
+              </button>
             </div>
 
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
                 onClick={cancelCrop}
-                className="flex-1 px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+                className="flex-1 px-4 py-3 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCropComplete}
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium"
               >
-                Apply Crop
+                ✓ Apply Crop
               </button>
             </div>
 
             {/* Hidden canvas for cropping */}
-            <canvas ref={canvasRef} className="hidden" />
+            <canvas ref={canvasRef} width={300} height={300} className="hidden" />
           </div>
         </div>
       )}
