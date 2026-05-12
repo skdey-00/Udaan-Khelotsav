@@ -27,3 +27,71 @@ export const TEAM_SEEDS: TeamSeed[] = [
 export const STARTING_PURSE = 10000000;
 export const BASE_PRICE = 1000;
 export const BID_INCREMENT = 1000;
+
+// Grade configuration
+export const GRADE_SETTINGS_KEY = "udaan-khelotsav-grade-settings";
+
+export interface GradeSettings {
+  grades: {
+    [key: string]: {
+      basePrice: number;
+      bidIncrement: number;
+      order: number;
+    };
+  };
+}
+
+export const DEFAULT_GRADE_SETTINGS: GradeSettings = {
+  grades: {
+    A: { basePrice: 1000000, bidIncrement: 500000, order: 1 },  // 10 Lakhs, 5 Lakhs increment
+    B: { basePrice: 400000, bidIncrement: 200000, order: 2 },     // 4 Lakhs, 2 Lakhs increment
+    C: { basePrice: 100000, bidIncrement: 100000, order: 3 },     // 1 Lakh, 1 Lakh increment
+  },
+};
+
+// Get grade settings from localStorage or return defaults
+export function getGradeSettings(): GradeSettings {
+  if (typeof window === 'undefined') return DEFAULT_GRADE_SETTINGS;
+  try {
+    const stored = localStorage.getItem(GRADE_SETTINGS_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch {}
+  return DEFAULT_GRADE_SETTINGS;
+}
+
+// Save grade settings to localStorage
+export function saveGradeSettings(settings: GradeSettings): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(GRADE_SETTINGS_KEY, JSON.stringify(settings));
+  } catch {}
+}
+
+// Get base price for a grade
+export function getBasePriceForGrade(grade: string | undefined): number {
+  const settings = getGradeSettings();
+  if (!grade || !settings.grades[grade]) {
+    return BASE_PRICE; // Fallback to default
+  }
+  return settings.grades[grade].basePrice;
+}
+
+// Get bid increment for a grade
+export function getBidIncrementForGrade(grade: string | undefined): number {
+  const settings = getGradeSettings();
+  if (!grade || !settings.grades[grade]) {
+    return BID_INCREMENT; // Fallback to default
+  }
+  return settings.grades[grade].bidIncrement;
+}
+
+// Get grade order for sorting (A first, then B, then C)
+export function getGradeOrder(grade: string | undefined): number {
+  const settings = getGradeSettings();
+  if (!grade || !settings.grades[grade]) {
+    return 999; // Put unknown grades last
+  }
+  return settings.grades[grade].order;
+}

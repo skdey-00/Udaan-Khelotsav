@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PLAYERS, getPlayerWithEdits, type Player } from "@/data/players";
-import { BASE_PRICE, BID_INCREMENT, STARTING_PURSE, TEAM_SEEDS } from "@/data/teams";
+import { BASE_PRICE, BID_INCREMENT, STARTING_PURSE, TEAM_SEEDS, getBasePriceForGrade, getBidIncrementForGrade, getGradeOrder } from "@/data/teams";
 
 export type PlayerStatus = "available" | "sold" | "unsold";
 
@@ -63,8 +63,19 @@ export function useAuction() {
     history: [...s.history, stripHistory(s)].slice(-50),
   });
 
+  // Sort available players by grade (A first, then B, then C), then by name
   const availablePlayers = useMemo(
-    () => PLAYERS.filter((p) => state.statuses[p.slug] === "available"),
+    () => {
+      const players = PLAYERS.filter((p) => state.statuses[p.slug] === "available");
+      return players.sort((a, b) => {
+        const gradeOrderA = getGradeOrder(a.grade);
+        const gradeOrderB = getGradeOrder(b.grade);
+        if (gradeOrderA !== gradeOrderB) {
+          return gradeOrderA - gradeOrderB;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    },
     [state.statuses]
   );
 
@@ -73,36 +84,75 @@ export function useAuction() {
     [state.currentSlug]
   );
 
+  // Get the current player's grade-specific base price and increment
+  const currentGradeSettings = useMemo(() => {
+    if (!currentPlayer) return { basePrice: BASE_PRICE, bidIncrement: BID_INCREMENT };
+    return {
+      basePrice: getBasePriceForGrade(currentPlayer.grade),
+      bidIncrement: getBidIncrementForGrade(currentPlayer.grade),
+    };
+  }, [currentPlayer]);
+
+  // Pick next player by grade order (A first, then B, then C)
+  const pickNextByGrade = useCallback(() => {
+    const available = PLAYERS.filter((p) => state.statuses[p.slug] === "available");
+    if (available.length === 0) return null;
+
+    // Sort by grade order, then by name
+    const sorted = [...available].sort((a, b) => {
+      const gradeOrderA = getGradeOrder(a.grade);
+      const gradeOrderB = getGradeOrder(b.grade);
+      if (gradeOrderA !== gradeOrderB) {
+        return gradeOrderA - gradeOrderB;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    return sorted[0];
+  }, [state.statuses]);
+
   const pickRandom = useCallback(() => {
     setState((s) => {
-      const pool = PLAYERS.filter((p) => s.statuses[p.slug] === "available");
-      if (pool.length === 0) return s;
-      const next = pool[Math.floor(Math.random() * pool.length)];
-      return { ...snapshot(s), currentSlug: next.slug, currentBid: BASE_PRICE };
+      const next = pickNextByGrade();
+      if (!next) return s;
+
+      const basePrice = getBasePriceForGrade(next.grade);
+      return { ...snapshot(s), currentSlug: next.slug, currentBid: basePrice };
+    });
+  }, [pickNextByGrade]);
+
+  const bidUp = useCallback(() => {
+    setState((s) => {
+      if (!s.currentSlug) return s;
+      const player = getPlayerWithEdits(s.currentSlug) || PLAYERS.find((p) => p.slug === s.currentSlug);
+      const increment = getBidIncrementForGrade(player?.grade);
+      return { ...snapshot(s), currentBid: s.currentBid + increment };
     });
   }, []);
 
-  const bidUp = useCallback(() => {
-    setState((s) => (s.currentSlug ? { ...snapshot(s), currentBid: s.currentBid + BID_INCREMENT } : s));
-  }, []);
-
   const bidDown = useCallback(() => {
-    setState((s) =>
-      s.currentSlug && s.currentBid > BASE_PRICE
-        ? { ...snapshot(s), currentBid: s.currentBid - BID_INCREMENT }
-        : s
-    );
+    setState((s) => {
+      if (!s.currentSlug) return s;
+      const player = getPlayerWithEdits(s.currentSlug) || PLAYERS.find((p) => p.slug === s.currentSlug);
+      const basePrice = getBasePriceForGrade(player?.grade);
+      const increment = getBidIncrementForGrade(player?.grade);
+      return s.currentBid > basePrice
+        ? { ...snapshot(s), currentBid: s.currentBid - increment }
+        : s;
+    });
   }, []);
 
   const markUnsold = useCallback(() => {
     setState((s) => {
       if (!s.currentSlug) return s;
+      const player = getPlayerWithEdits(s.currentSlug) || PLAYERS.find((p) => p.slug === s.currentSlug);
+      const basePrice = getBasePriceForGrade(player?.grade);
       const ns = snapshot(s);
       return {
         ...ns,
         statuses: { ...ns.statuses, [s.currentSlug]: "unsold" },
         currentSlug: null,
-        currentBid: BASE_PRICE,
+        currentBid: basePrice,
       };
     });
   }, []);
@@ -112,6 +162,8 @@ export function useAuction() {
       if (!s.currentSlug) return s;
       const price = s.currentBid;
       if ((s.purses[teamId] ?? 0) < price) return s;
+      const player = getPlayerWithEdits(s.currentSlug) || PLAYERS.find((p) => p.slug === s.currentSlug);
+      const basePrice = getBasePriceForGrade(player?.grade);
       const ns = snapshot(s);
       return {
         ...ns,
@@ -119,7 +171,7 @@ export function useAuction() {
         sold: [...ns.sold, { playerSlug: s.currentSlug, teamId, price }],
         purses: { ...ns.purses, [teamId]: ns.purses[teamId] - price },
         currentSlug: null,
-        currentBid: BASE_PRICE,
+        currentBid: basePrice,
       };
     });
   }, []);
@@ -191,6 +243,7 @@ export function useAuction() {
     availablePlayers,
     currentPlayer,
     pickRandom,
+    pickNextByGrade,
     bidUp,
     bidDown,
     markUnsold,
@@ -199,6 +252,7 @@ export function useAuction() {
     reset,
     teamRoster,
     stats,
+    currentGradeSettings,
     canUndo: state.history.length > 0,
   };
 }

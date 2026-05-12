@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { useAuction } from "@/hooks/use-auction";
-import { TEAM_SEEDS, BID_INCREMENT, BASE_PRICE, STARTING_PURSE } from "@/data/teams";
+import { TEAM_SEEDS, STARTING_PURSE } from "@/data/teams";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
 import { PLAYERS, getPlayerWithEdits } from "@/data/players";
 
@@ -119,7 +119,16 @@ function AuctionPage() {
                 <div className="relative rounded-2xl overflow-hidden gold-ring aspect-square bg-card">
                   <PlayerPhoto player={a.currentPlayer} className="w-full h-full" />
                 </div>
-                <BadgePill className="absolute -top-3 left-4">{a.currentPlayer.category}</BadgePill>
+                <BadgePill className="absolute -top-3 left-4">
+                  <span className={`inline-block px-2 py-1 rounded text-sm font-bold ${
+                    a.currentPlayer.grade === 'A' ? 'bg-yellow-500 text-black' :
+                    a.currentPlayer.grade === 'B' ? 'bg-blue-500 text-white' :
+                    'bg-green-600 text-white'
+                  }`}>
+                    Grade {a.currentPlayer.grade || 'C'}
+                  </span>
+                </BadgePill>
+                <BadgePill className="absolute -top-3 right-4">{a.currentPlayer.category}</BadgePill>
               </div>
               <div>
                 <p className="font-stencil text-primary/80 text-sm">Now on the stage</p>
@@ -130,7 +139,7 @@ function AuctionPage() {
                   <Tag>{a.currentPlayer.gender}</Tag>
                   <Tag>{a.currentPlayer.category}</Tag>
                   {a.currentPlayer.age && <Tag>Age {a.currentPlayer.age}</Tag>}
-                  <Tag>Base ₹{fmt(BASE_PRICE)}</Tag>
+                  <Tag>Base ₹{fmt(a.currentGradeSettings.basePrice)}</Tag>
                 </div>
 
                 <div className="mt-8">
@@ -147,26 +156,30 @@ function AuctionPage() {
 
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button onClick={() => a.bidUp()} className="btn-gold">
-                    + ₹{fmt(BID_INCREMENT)}
+                    + ₹{fmt(a.currentGradeSettings.bidIncrement)}
                   </button>
                   <button onClick={() => a.bidDown()} className="btn-ghost">
-                    − ₹{fmt(BID_INCREMENT)}
+                    − ₹{fmt(a.currentGradeSettings.bidIncrement)}
                   </button>
                   <button onClick={() => {
-                    const newBid = a.state.currentBid + (BID_INCREMENT * 5);
-                    if (newBid <= 50000) {
+                    const increment = a.currentGradeSettings.bidIncrement;
+                    const newBid = a.state.currentBid + (increment * 5);
+                    const maxBid = a.currentGradeSettings.basePrice * 5; // Cap at 5x base price
+                    if (newBid <= maxBid) {
                       for(let i = 0; i < 5; i++) a.bidUp();
                     }
                   }} className="btn-gold">
-                    + ₹5,000
+                    + ₹{fmt(a.currentGradeSettings.bidIncrement * 5)}
                   </button>
                   <button onClick={() => {
-                    const newBid = a.state.currentBid + (BID_INCREMENT * 10);
-                    if (newBid <= 50000) {
+                    const increment = a.currentGradeSettings.bidIncrement;
+                    const newBid = a.state.currentBid + (increment * 10);
+                    const maxBid = a.currentGradeSettings.basePrice * 10; // Cap at 10x base price
+                    if (newBid <= maxBid) {
                       for(let i = 0; i < 10; i++) a.bidUp();
                     }
                   }} className="btn-gold">
-                    + ₹10,000
+                    + ₹{fmt(a.currentGradeSettings.bidIncrement * 10)}
                   </button>
                   <button onClick={() => setShowTeams(true)} className="btn-success">
                     SOLD
@@ -181,11 +194,11 @@ function AuctionPage() {
             <div className="text-center py-16 relative">
               <p className="font-stencil text-primary/80 tracking-[0.4em] text-sm">READY</p>
               <h2 className="font-display text-4xl md:text-6xl font-black text-gold mt-2">
-                Spin the Auction
+                Grade-Based Auction
               </h2>
               <p className="text-muted-foreground mt-3 max-w-md mx-auto">
                 {remaining > 0
-                  ? `${remaining} players await their team. Pull a name at random.`
+                  ? `${remaining} players remain. Players will be picked by grade order (A → B → C).`
                   : "All players have been processed. Reset to start over."}
               </p>
               <button
@@ -193,7 +206,7 @@ function AuctionPage() {
                 disabled={remaining === 0}
                 className="btn-gold mt-8 text-lg px-10 py-4 disabled:opacity-40"
               >
-                🎲 Pick Random Player
+                🎲 Pick Next Player (Grade Order)
               </button>
             </div>
           )}

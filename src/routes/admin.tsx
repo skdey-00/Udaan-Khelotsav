@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { PLAYERS } from "@/data/players";
+import { DEFAULT_GRADE_SETTINGS, getGradeSettings, saveGradeSettings, type GradeSettings } from "@/data/teams";
 
 export const Route = createFileRoute("/admin")({
   component: AdminComponent,
@@ -78,6 +79,9 @@ function AdminComponent() {
     category: '',
     age: ''
   });
+
+  // Grade settings state
+  const [gradeSettings, setGradeSettings] = useState<GradeSettings>(() => getGradeSettings());
 
   const clearMessages = () => {
     setError("");
@@ -789,6 +793,107 @@ function AdminComponent() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Grade Settings Section */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-purple-600 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Grade Settings
+            </h2>
+            <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-6">
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure base prices and bid increments for each player grade. Players are auctioned in grade order (A first, then B, then C).
+              </p>
+              <div className="grid md:grid-cols-3 gap-4">
+                {Object.entries(gradeSettings.grades).map(([grade, settings]) => (
+                  <div key={grade} className="bg-card rounded-lg p-4 border-2 border-purple-500/30">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">
+                        <span className={`inline-block px-3 py-1 rounded ${
+                          grade === 'A' ? 'bg-yellow-500 text-black' :
+                          grade === 'B' ? 'bg-blue-500 text-white' :
+                          'bg-green-600 text-white'
+                        }`}>
+                          Grade {grade}
+                        </span>
+                      </h3>
+                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">
+                        Order {settings.order}
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                          Base Price (₹)
+                        </label>
+                        <input
+                          type="number"
+                          value={settings.basePrice}
+                          onChange={(e) => {
+                            const newSettings = { ...gradeSettings };
+                            newSettings.grades[grade] = { ...settings, basePrice: parseInt(e.target.value) || 0 };
+                            setGradeSettings(newSettings);
+                          }}
+                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground"
+                          min="0"
+                          step="10000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                          Bid Increment (₹)
+                        </label>
+                        <input
+                          type="number"
+                          value={settings.bidIncrement}
+                          onChange={(e) => {
+                            const newSettings = { ...gradeSettings };
+                            newSettings.grades[grade] = { ...settings, bidIncrement: parseInt(e.target.value) || 0 };
+                            setGradeSettings(newSettings);
+                          }}
+                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground"
+                          min="0"
+                          step="10000"
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground pt-2 border-t border-border">
+                        Base: ₹{(settings.basePrice / 100000).toFixed(1)}L •
+                        Increment: ₹{(settings.bidIncrement / 100000).toFixed(1)}L
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => {
+                    saveGradeSettings(gradeSettings);
+                    setSuccessMessage("Grade settings saved successfully!");
+                    setRefreshKey(prev => prev + 1);
+                  }}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                >
+                  Save Grade Settings
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Reset grade settings to defaults?")) {
+                      const defaults = DEFAULT_GRADE_SETTINGS;
+                      setGradeSettings(defaults);
+                      saveGradeSettings(defaults);
+                      setSuccessMessage("Grade settings reset to defaults.");
+                      setRefreshKey(prev => prev + 1);
+                    }
+                  }}
+                  className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm"
+                >
+                  Reset to Defaults
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Reset Section */}
