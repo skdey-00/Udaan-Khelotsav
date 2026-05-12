@@ -5,7 +5,18 @@
       "Bash(git --version)",
       "Bash(git init:*)",
       "Bash(dir:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

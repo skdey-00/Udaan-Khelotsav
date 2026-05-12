@@ -17,15 +17,22 @@ function AdminComponent() {
   });
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const clearMessages = () => {
+    setError("");
+    setSuccessMessage("");
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    clearMessages();
     if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       localStorage.setItem(STORAGE_KEY, "true");
-      setError("");
     } else {
       setError("Incorrect password");
     }
@@ -41,27 +48,60 @@ function AdminComponent() {
     const file = e.target.files?.[0];
     if (!file || !selectedPlayer) return;
 
+    // Validate file size (max 500KB to avoid localStorage quota issues)
+    const MAX_SIZE = 500 * 1024; // 500KB in bytes
+    if (file.size > MAX_SIZE) {
+      setError(`File too large. Please choose an image under 500KB. (Selected: ${(file.size / 1024).toFixed(0)}KB)`);
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      return;
+    }
+
     setUploading(true);
+    clearMessages();
 
     try {
       // Convert image to base64
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64 = reader.result as string;
+        try {
+          const base64 = reader.result as string;
 
-        // Get existing photos from localStorage
-        const existingPhotos = localStorage.getItem(PHOTOS_KEY);
-        const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
+          // Check localStorage quota before saving
+          const existingPhotos = localStorage.getItem(PHOTOS_KEY);
+          const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
 
-        // Store the photo for this player
-        photosMap[selectedPlayer] = base64;
+          // Store the photo for this player
+          photosMap[selectedPlayer] = base64;
 
-        // Save back to localStorage
-        localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
+          // Try to save and check for quota exceeded error
+          try {
+            localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
+            setUploading(false);
+            setSuccessMessage(`Photo uploaded successfully for ${PLAYERS.find(p => p.slug === selectedPlayer)?.name}!`);
+            e.target.value = ""; // Reset file input
+          } catch (quotaErr) {
+            if (quotaErr instanceof DOMException && quotaErr.name === "QuotaExceededError") {
+              setError("Storage full. Please remove some photos first.");
+            } else {
+              throw quotaErr;
+            }
+            setUploading(false);
+          }
+        } catch (parseErr) {
+          console.error("Error processing photo:", parseErr);
+          setError("Failed to process photo. Please try a different file.");
+          setUploading(false);
+        }
+      };
 
+      reader.onerror = () => {
+        setError("Failed to read file. Please try again.");
         setUploading(false);
-        alert(`Photo uploaded for ${PLAYERS.find(p => p.slug === selectedPlayer)?.name}!`);
-        e.target.value = ""; // Reset file input
       };
 
       reader.readAsDataURL(file);
@@ -73,6 +113,8 @@ function AdminComponent() {
   };
 
   const getStoredPhoto = (slug: string) => {
+    // Include refreshKey to force re-fetch when photos change
+    void refreshKey;
     const existingPhotos = localStorage.getItem(PHOTOS_KEY);
     const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
     return photosMap[slug] || null;
@@ -166,7 +208,7 @@ function AdminComponent() {
                   const hasPhoto = !!getStoredPhoto(player.slug);
                   return (
                     <button
-                      key={player.slug}
+                      key={`${player.slug}-${refreshKey}`}
                       onClick={() => setSelectedPlayer(player.slug)}
                       className={`w-full p-3 rounded-lg text-left transition-colors ${
                         selectedPlayer === player.slug
@@ -200,7 +242,7 @@ function AdminComponent() {
               Upload Photo
             </h2>
             {selectedPlayer ? (
-              <div className="bg-card rounded-lg border border-border p-6">
+              <div key={`upload-${refreshKey}`} className="bg-card rounded-lg border border-border p-6">
                 {(() => {
                   const player = PLAYERS.find((p) => p.slug === selectedPlayer);
                   const storedPhoto = getStoredPhoto(selectedPlayer);
@@ -254,11 +296,21 @@ function AdminComponent() {
                               hover:file:bg-primary/90
                               cursor-pointer disabled:opacity-50"
                           />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Max file size: 500KB. Recommended: Square or portrait image.
+                          </p>
                         </label>
                         {uploading && (
-                          <p className="text-sm text-muted-foreground mt-2">
+                          <p className="text-sm text-primary mt-2 flex items-center gap-2">
+                            <span className="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             Uploading...
                           </p>
+                        )}
+                        {error && (
+                          <p className="text-sm text-red-500 mt-2">{error}</p>
+                        )}
+                        {successMessage && (
+                          <p className="text-sm text-green-600 mt-2">{successMessage}</p>
                         )}
                       </div>
 
@@ -270,9 +322,8 @@ function AdminComponent() {
                             const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
                             delete photosMap[selectedPlayer];
                             localStorage.setItem(PHOTOS_KEY, JSON.stringify(photosMap));
-                            // Force re-render
-                            setSelectedPlayer(null);
-                            setTimeout(() => setSelectedPlayer(selectedPlayer), 0);
+                            setSuccessMessage("Photo removed successfully.");
+                            setRefreshKey(prev => prev + 1);
                           }}
                           className="mt-4 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
                         >

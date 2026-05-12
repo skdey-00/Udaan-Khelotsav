@@ -23,8 +23,8 @@ function AuctionPage() {
   const [openTeam, setOpenTeam] = useState<string | null>(null);
   const [pulse, setPulse] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [confetti, setConfetti] = useState(false);
+  const [lastSoldCount, setLastSoldCount] = useState(0);
 
   useEffect(() => {
     setPulse(true);
@@ -32,15 +32,15 @@ function AuctionPage() {
     return () => clearTimeout(t);
   }, [a.state.currentBid, a.state.currentSlug]);
 
-  // Trigger confetti when a player is sold
+  // Trigger confetti when a player is sold (not on undo)
   useEffect(() => {
-    if (a.state.sold.length > 0) {
-      const lastSold = a.state.sold[a.state.sold.length - 1];
-      const prevLength = a.state.sold.length - 1;
-      // Simple confetti effect on sale
+    const currentSoldCount = a.state.sold.length;
+    // Only show confetti when sold count increases (new sale), not decreases (undo)
+    if (currentSoldCount > lastSoldCount && lastSoldCount >= 0) {
       setConfetti(true);
       setTimeout(() => setConfetti(false), 2000);
     }
+    setLastSoldCount(currentSoldCount);
   }, [a.state.sold.length]);
 
   const totalSold = a.stats.totalSold;
