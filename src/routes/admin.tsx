@@ -10,6 +10,35 @@ const STORAGE_KEY = "udaan-khelotsav-admin-auth";
 const PHOTOS_KEY = "udaan-khelotsav-player-photos";
 const ADMIN_PASSWORD = "khelotsav2025"; // You can change this password
 
+// Helper to check if a player has any photo (localStorage or static)
+const playerHasPhoto = (player: { slug: string; photoFileName?: string }): { hasPhoto: boolean; source: 'localStorage' | 'static' | 'none'; src?: string } => {
+  // First check localStorage
+  try {
+    const existingPhotos = localStorage.getItem(PHOTOS_KEY);
+    const photosMap = existingPhotos ? JSON.parse(existingPhotos) : {};
+    if (photosMap[player.slug]) {
+      return { hasPhoto: true, source: 'localStorage', src: photosMap[player.slug] };
+    }
+  } catch {}
+
+  // Then check if static photo exists
+  // We'll return true if photoFileName is set, or if slug-based file might exist
+  if (player.photoFileName) {
+    return { hasPhoto: true, source: 'static', src: `/players/${player.photoFileName}` };
+  }
+
+  // Check for common image extensions with slug
+  const exts = ["jpg", "jpeg", "png", "webp"];
+  for (const ext of exts) {
+    const path = `/players/${player.slug}.${ext}`;
+    // We can't actually check file existence in browser, but we can return the path
+    // The img tag will handle 404s
+    return { hasPhoto: true, source: 'static', src: path };
+  }
+
+  return { hasPhoto: false, source: 'none' };
+};
+
 function AdminComponent() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -120,8 +149,25 @@ function AdminComponent() {
     return photosMap[slug] || null;
   };
 
-  // Count players with photos
-  const photosCount = PLAYERS.filter(p => !!getStoredPhoto(p.slug)).length;
+  // Get photo info (localStorage or static)
+  const getPhotoInfo = (player: { slug: string; photoFileName?: string }) => {
+    // First check localStorage
+    const stored = getStoredPhoto(player.slug);
+    if (stored) {
+      return { hasPhoto: true, source: 'uploaded' as const, src: stored };
+    }
+    // Then check static
+    const info = playerHasPhoto(player);
+    if (info.hasPhoto) {
+      return { hasPhoto: true, source: 'static' as const, src: info.src || `/players/${player.slug}.jpg` };
+    }
+    return { hasPhoto: false, source: 'none' as const, src: undefined };
+  };
+
+  // Count players with photos (either uploaded or static)
+  const photosCount = PLAYERS.reduce((count, player) => {
+    return count + (playerHasPhoto(player).hasPhoto ? 1 : 0);
+  }, 0);
 
   if (!isAuthenticated) {
     return (
@@ -213,8 +259,7 @@ function AdminComponent() {
             <div className="bg-card rounded-lg border border-border p-4 max-h-[600px] overflow-y-auto">
               <div className="space-y-2">
                 {PLAYERS.map((player) => {
-                  const hasPhoto = !!getStoredPhoto(player.slug);
-                  const photoSrc = getStoredPhoto(player.slug);
+                  const photoInfo = getPhotoInfo(player);
                   return (
                     <button
                       key={`${player.slug}-${refreshKey}`}
@@ -228,11 +273,11 @@ function AdminComponent() {
                       <div className="flex items-center gap-3">
                         {/* Thumbnail or placeholder */}
                         <div className={`w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center ${
-                          hasPhoto ? 'bg-transparent' : 'bg-muted-foreground/20'
+                          photoInfo.hasPhoto ? 'bg-transparent' : 'bg-muted-foreground/20'
                         }`}>
-                          {hasPhoto ? (
+                          {photoInfo.hasPhoto ? (
                             <img
-                              src={photoSrc!}
+                              src={photoInfo.src!}
                               alt={player.name}
                               className="w-full h-full object-cover"
                             />
@@ -250,13 +295,28 @@ function AdminComponent() {
                           </p>
                         </div>
 
-                        {/* Photo indicator with icon */}
-                        {hasPhoto && (
-                          <div className="flex items-center gap-1.5 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span>Photo</span>
+                        {/* Photo indicator - different for uploaded vs static */}
+                        {photoInfo.hasPhoto && (
+                          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+                            photoInfo.source === 'uploaded'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-blue-500/20 text-blue-400 dark:text-blue-300'
+                          }`}>
+                            {photoInfo.source === 'uploaded' ? (
+                              <>
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Uploaded</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>Static</span>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -270,13 +330,13 @@ function AdminComponent() {
           {/* Upload Section */}
           <div>
             <h2 className="text-xl font-semibold text-foreground mb-4">
-              Upload Photo
+              {selectedPlayer && getPhotoInfo(PLAYERS.find(p => p.slug === selectedPlayer)!).source === 'static' ? 'Photo Info' : 'Upload Photo'}
             </h2>
             {selectedPlayer ? (
               <div key={`upload-${refreshKey}`} className="bg-card rounded-lg border border-border p-6">
                 {(() => {
                   const player = PLAYERS.find((p) => p.slug === selectedPlayer);
-                  const storedPhoto = getStoredPhoto(selectedPlayer);
+                  const photoInfo = getPhotoInfo(player!);
                   return (
                     <>
                       <div className="mb-6">
@@ -293,13 +353,23 @@ function AdminComponent() {
                         <p className="text-sm font-medium text-foreground mb-2">
                           Current Photo:
                         </p>
-                        <div className="w-48 h-48 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                          {storedPhoto ? (
-                            <img
-                              src={storedPhoto}
-                              alt={player?.name}
-                              className="w-full h-full object-cover"
-                            />
+                        <div className="w-48 h-48 rounded-lg overflow-hidden bg-muted flex items-center justify-center relative">
+                          {photoInfo.hasPhoto ? (
+                            <>
+                              <img
+                                src={photoInfo.src!}
+                                alt={player?.name}
+                                className="w-full h-full object-cover"
+                              />
+                              {/* Source badge */}
+                              <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${
+                                photoInfo.source === 'uploaded'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-blue-500/80 text-white'
+                              }`}>
+                                {photoInfo.source === 'uploaded' ? 'Uploaded' : 'Static File'}
+                              </div>
+                            </>
                           ) : (
                             <div className="text-center p-4">
                               <p className="text-muted-foreground text-sm">
@@ -309,6 +379,15 @@ function AdminComponent() {
                           )}
                         </div>
                       </div>
+
+                      {/* Info text for static photos */}
+                      {photoInfo.source === 'static' && (
+                        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <p className="text-sm text-blue-400 dark:text-blue-300">
+                            ℹ️ This player has a static photo file. Uploaded photos will override static files.
+                          </p>
+                        </div>
+                      )}
 
                       {/* Upload Button */}
                       <div>
@@ -345,8 +424,8 @@ function AdminComponent() {
                         )}
                       </div>
 
-                      {/* Delete Button */}
-                      {storedPhoto && (
+                      {/* Delete Button - only for uploaded photos */}
+                      {photoInfo.source === 'uploaded' && (
                         <button
                           onClick={() => {
                             const existingPhotos = localStorage.getItem(PHOTOS_KEY);
@@ -358,7 +437,7 @@ function AdminComponent() {
                           }}
                           className="mt-4 px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
                         >
-                          Remove Photo
+                          Remove Uploaded Photo
                         </button>
                       )}
                     </>
