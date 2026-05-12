@@ -13,6 +13,11 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
+  css: {
+    postcss: {
+      plugins: [],
+    },
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,
