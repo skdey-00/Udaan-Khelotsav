@@ -21,21 +21,12 @@ const playerHasPhoto = (player: { slug: string; photoFileName?: string }): { has
     }
   } catch {}
 
-  // Then check if static photo exists
-  // We'll return true if photoFileName is set, or if slug-based file might exist
+  // Then check if static photo exists (only if photoFileName is set)
   if (player.photoFileName) {
     return { hasPhoto: true, source: 'static', src: `/players/${player.photoFileName}` };
   }
 
-  // Check for common image extensions with slug
-  const exts = ["jpg", "jpeg", "png", "webp"];
-  for (const ext of exts) {
-    const path = `/players/${player.slug}.${ext}`;
-    // We can't actually check file existence in browser, but we can return the path
-    // The img tag will handle 404s
-    return { hasPhoto: true, source: 'static', src: path };
-  }
-
+  // No photo
   return { hasPhoto: false, source: 'none' };
 };
 
