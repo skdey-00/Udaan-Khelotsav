@@ -634,58 +634,63 @@ function AdminComponent() {
             {/* Preview Container */}
             <div className="flex flex-col items-center mb-6">
               <div
-                className="relative overflow-hidden border-2 border-dashed border-primary/50 rounded-lg bg-black"
-                style={{ width: '300px', height: '300px' }}
-              >
-                <div
-                  className="absolute inset-0 flex items-center justify-center overflow-hidden"
-                  style={{ backgroundColor: '#1a1a1a' }}
-                >
-                  <img
-                    ref={previewRef}
-                    src={originalImage}
-                    alt="Preview"
-                    className="max-w-none max-h-none object-contain pointer-events-none"
-                    style={{
-                      width: `${300 * zoom}px`,
-                      height: `${300 * zoom}px`,
-                      transform: `translate(${crop.x}px, ${crop.y}px)`,
-                      transition: isDragging ? 'none' : 'transform 0.1s ease-out'
-                    }}
-                    draggable={false}
-                  />
-                </div>
-
-                {/* Square crop indicator */}
-                <div className="absolute inset-0 border-2 border-white/50 pointer-events-none" />
-
-                {/* Corner indicators */}
-                <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary" />
-                <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary" />
-                <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary" />
-
-                {/* Center guide */}
-                <div className="absolute top-1/2 left-0 right-0 h-px bg-white/30 pointer-events-none" />
-                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/30 pointer-events-none" />
-              </div>
-
-              {/* Draggable area - invisible overlay */}
-              <div
-                className="absolute cursor-grab active:cursor-grabbing"
-                style={{ width: '300px', height: '300px', marginTop: '-300px' }}
+                className="relative border-2 border-dashed border-primary/50 rounded-lg overflow-hidden"
+                style={{ width: '300px', height: '300px', backgroundColor: '#1a1a1a' }}
                 onMouseDown={(e) => {
                   e.preventDefault();
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                   setIsDragging(true);
-                  setDragStart({ x: e.clientX - crop.x, y: e.clientY - crop.y });
+                  setDragStart({
+                    x: e.clientX - crop.x,
+                    y: e.clientY - crop.y
+                  });
                 }}
                 onTouchStart={(e) => {
                   e.preventDefault();
                   const touch = e.touches[0];
                   setIsDragging(true);
-                  setDragStart({ x: touch.clientX - crop.x, y: touch.clientY - crop.y });
+                  setDragStart({
+                    x: touch.clientX - crop.x,
+                    y: touch.clientY - crop.y
+                  });
                 }}
-              />
+              >
+                {/* The image being positioned */}
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+                  <img
+                    ref={previewRef}
+                    src={originalImage}
+                    alt="Preview"
+                    className="object-contain pointer-events-none"
+                    style={{
+                      width: `${300 * zoom}px`,
+                      height: `${300 * zoom}px`,
+                      transform: `translate(${crop.x}px, ${crop.y}px)`,
+                      transition: isDragging ? 'none' : 'transform 0.05s ease-out',
+                      maxWidth: 'none'
+                    }}
+                    draggable={false}
+                  />
+                </div>
+
+                {/* Square border overlay */}
+                <div className="absolute inset-0 border-2 border-primary pointer-events-none" />
+
+                {/* Corner indicators */}
+                <div className="absolute top-0 left-0 w-3 h-3 border-l-2 border-t-2 border-yellow-400 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-3 h-3 border-r-2 border-t-2 border-yellow-400 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-3 h-3 border-l-2 border-b-2 border-yellow-400 pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-3 h-3 border-r-2 border-b-2 border-yellow-400 pointer-events-none" />
+
+                {/* Center crosshair */}
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-white/20 pointer-events-none" />
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20 pointer-events-none" />
+
+                {/* Grab cursor indicator */}
+                <div className="absolute bottom-2 right-2 text-xs text-white/50 pointer-events-none">
+                  {isDragging ? 'Dragging...' : 'Drag to pan'}
+                </div>
+              </div>
             </div>
 
             {/* Zoom Slider */}
